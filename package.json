@@ -1,0 +1,31 @@
+{
+  "name": "nadajniki",
+  "version": "1.0.0",
+  "description": "Map of polish radio stations.",
+  "private": true,
+  "scripts": {
+    "test": "make test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yasiupl/nadajniki.git"
+  },
+  "author": "yasiupl",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yasiupl/nadajniki/issues"
+  },
+  "homepage": "https://github.com/yasiupl/nadajniki#readme",
+  "devDependencies": {
+    "webpack": "^4.40.2",
+    "webpack-cli": "^3.3.9",
+    "webpack-dev-server": "^3.8.1"
+  },
+  "dependencies": {
+    "html-webpack-plugin": "^3.2.0",
+    "css-loader": "^3.2.0",
+    "file-loader": "^4.2.0",
+    "leaflet": "^1.5.1",
+    "style-loader": "^1.0.0"
+  }
+}

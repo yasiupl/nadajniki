@@ -1,10 +1,12 @@
 install:
-	npm install
+	npm ci
 
-build: install build-data
+build: build-data
 	node_modules/.bin/webpack 
 
-serve: install
+deploy: install build
+
+serve: 
 	node_modules/.bin/webpack-dev-server
 
 build-data:

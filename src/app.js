@@ -66,7 +66,7 @@ map.on('load', function () {
     map.addSource("nadajniki", {
         type: "geojson",
         //data: require('./data/DZC_MOB.json'),
-        data: require('./data/OWA.geojson')
+        data: require('./data/OWA.json')
     });
 
     // Add a layer showing the places.

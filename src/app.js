@@ -59,8 +59,8 @@ map.addControl(new mapboxgl.GeolocateControl({
 
 map.on('load', function () {
     map.flyTo({
-        center: [53.58, 19.56],
-        zoom: 4
+        center: [19.134422, 51.919231],
+        zoom: 6
     });
 
     map.addSource("nadajniki", {

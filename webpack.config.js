@@ -1,5 +1,5 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const path = require('path')
+const path = require('path');
 
 module.exports = {
     entry: './src/app.js',
@@ -30,10 +30,8 @@ module.exports = {
                 ]
             },
             {
-                test: /\.png$/,
-                use: [
-                    'file-loader'
-                ]
+                test: /\.(jpe?g|gif|png|svg|woff|ttf|wav|mp3)$/,
+                loader: "file-loader"
             }
         ]
     }

@@ -1,2 +1,4 @@
 node_modules/
 dist/
+src/data/*.json
+./data/

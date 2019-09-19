@@ -22,10 +22,13 @@
     "webpack-dev-server": "^3.8.1"
   },
   "dependencies": {
-    "html-webpack-plugin": "^3.2.0",
     "css-loader": "^3.2.0",
     "file-loader": "^4.2.0",
-    "leaflet": "^1.5.1",
-    "style-loader": "^1.0.0"
+    "html-webpack-plugin": "^3.2.0",
+    "mapbox-gl": "^1.3.1",
+    "request": "^2.88.0",
+    "style-loader": "^1.0.0",
+    "unzipper": "^0.10.5",
+    "xlsx-extractor": "^1.4.1"
   }
 }

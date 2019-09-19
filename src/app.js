@@ -45,8 +45,8 @@ mapboxgl.accessToken = 'pk.eyJ1IjoieWFzaXUiLCJhIjoiY2o4dWF2dmZnMHEwODMzcnB6NmZ5c
 var map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/dark-v10',
-    center: [51.9, 19.1],
-    zoom: 4
+    center: [19.134422, 51.919231],
+    zoom: 6
 });
 
 // Add geolocate control to the map.
@@ -58,10 +58,6 @@ map.addControl(new mapboxgl.GeolocateControl({
     }));
 
 map.on('load', function () {
-    map.flyTo({
-        center: [19.134422, 51.919231],
-        zoom: 6
-    });
 
     map.addSource("nadajniki", {
         type: "geojson",

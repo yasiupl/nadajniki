@@ -1,4 +1,4 @@
-deploy: install build build-data
+deploy: install build-data build 
 
 install:
 	npm ci

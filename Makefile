@@ -1,13 +1,14 @@
+deploy: install build build-data
+
 install:
 	npm ci
-
-build: build-data
-	node_modules/.bin/webpack 
-
-deploy: install build
 
 serve: 
 	node_modules/.bin/webpack-dev-server
 
 build-data:
+	mkdir -p ./dist/data
 	node parse_data.js
+
+build:
+	node_modules/.bin/webpack 

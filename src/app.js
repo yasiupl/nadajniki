@@ -44,7 +44,8 @@ const types = {
 mapboxgl.accessToken = 'pk.eyJ1IjoieWFzaXUiLCJhIjoiY2o4dWF2dmZnMHEwODMzcnB6NmZ5cGpicCJ9.XzC5pC59qPSmqbLv2xBDQw';
 var map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/mapbox/dark-v10',
+    style: 'mapbox://styles/mapbox/outdoors-v10',
+    hash: true,
     center: [19.134422, 51.919231],
     zoom: 6
 });
@@ -52,24 +53,71 @@ var map = new mapboxgl.Map({
 // Add geolocate control to the map.
 map.addControl(new mapboxgl.GeolocateControl({
     positionOptions: {
-    enableHighAccuracy: true
+        enableHighAccuracy: true
     },
     trackUserLocation: true
-    }));
+}));
 
 map.on('load', function () {
 
     map.addSource("nadajniki", {
         type: "geojson",
-        //data: require('./data/DZC_MOB.json'),
-        data: require('./data/OWA.json')
+        data: './data/data.geojson',
+        //cluster: true,
+        clusterMaxZoom: 10, // Max zoom to cluster points on
+        clusterRadius: 50
+    });
+
+    map.addLayer({
+        id: "clusters",
+        type: "circle",
+        source: "nadajniki",
+        filter: ["has", "point_count"],
+        paint: {
+            // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+            // with three steps to implement three types of circles:
+            //   * Blue, 20px circles when point count is less than 100
+            //   * Yellow, 30px circles when point count is between 100 and 750
+            //   * Pink, 40px circles when point count is greater than or equal to 750
+            "circle-color": [
+                "step",
+                ["get", "point_count"],
+                "#51bbd6",
+                100,
+                "#f1f075",
+                750,
+                "#f28cb1"
+            ],
+            "circle-radius": [
+                "step",
+                ["get", "point_count"],
+                20,
+                100,
+                30,
+                750,
+                40
+            ]
+        }
+    });
+
+    map.addLayer({
+        id: "cluster-count",
+        type: "symbol",
+        source: "nadajniki",
+        filter: ["has", "point_count"],
+        layout: {
+            "text-field": "{point_count_abbreviated}",
+            "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+            "text-size": 12
+        }
     });
 
     // Add a layer showing the places.
     map.addLayer({
-        id: "places",
+        id: "unclustered-point",
         type: "circle",
         source: "nadajniki",
+        filter: ["!", ["has", "point_count"]],
         paint: {
             "circle-color": "#11b4da",
             "circle-radius": 4,
@@ -80,7 +128,7 @@ map.on('load', function () {
 
     // When a click event occurs on a feature in the places layer, open a popup at the
     // location of the feature, with description HTML from its properties.
-    map.on('click', 'places', function (e) {
+    map.on('click', 'unclustered-point', function (e) {
         let coordinates = e.features[0].geometry.coordinates.slice();
         let description = ''
 
@@ -102,12 +150,12 @@ map.on('load', function () {
     });
 
     // Change the cursor to a pointer when the mouse is over the places layer.
-    map.on('mouseenter', 'places', function () {
+    map.on('mouseenter', 'unclustered-point', function () {
         map.getCanvas().style.cursor = 'pointer';
     });
 
     // Change it back to a pointer when it leaves.
-    map.on('mouseleave', 'places', function () {
+    map.on('mouseleave', 'unclustered-point', function () {
         map.getCanvas().style.cursor = '';
     });
 });

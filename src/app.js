@@ -1,6 +1,47 @@
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
+const headers = {
+    id: 'Nr pozwolenia',
+    date: 'Data wygaśnięcia',
+    name: 'Nazwa stacji',
+    stationType: 'Rodzaj stacji',
+    networkType: 'Rodzaj sieci',
+    lat: 'Długość geograficzna',
+    lon: 'Szerokość geograficzna',
+    radius: 'Promień obszaru obsługi',
+    location: 'Lokalizacja stacji',
+    erp: 'Maksymalna zastępcza moc promieniowania [dBW]',
+    azimuth: 'Azymut',
+    elevation: 'Elewacja',
+    polarization: 'Polaryzacja',
+    gain: 'Zysk anteny',
+    antennaHeight: 'Wysokość umieszczenia anteny',
+    groundHeight: 'Wysokość anteny',
+    verticalCharacteristic: 'Kod charakterystyki promieniowania - pion',
+    horizontalCharacteristic: 'Kod charakterystyki promieniowania - poziom',
+    tx: 'Częstotliwości nadawcze [MHz]',
+    rx: 'Częstotliwości odbiorcze [MHz]',
+    txSpan: 'Szerokości kanałów nadawczych [kHz]',
+    rxSpan: 'Szerokości kanałów odbiorczych [kHz]',
+    op: 'Operator',
+    opAdress: 'Adres operatora'
+}
+
+const types = {
+    A: "Dyspozytorska",
+    B: "Przywoławcza",
+    C: "Transmisja danych",
+    D: "Retransmisja",
+    E: "Zdalne sterowanie",
+    F: "Powiadamiania o alarmach",
+    P: "Bezprzewodowe poszukiwanie osób",
+    Q: "Mikrofony bezprzewodowe",
+    R: "Reportażowa",
+    T: "Trunkingowa"
+}
+
+/* 
 const headers = [
     'Nr pozwolenia',
     'Data wygaśnięcia',
@@ -20,26 +61,14 @@ const headers = [
     'Wysokość terenu',
     'Kod charakterystyki promieniowania - poziom',
     'Kod charakterystyki promieniowania - pion',
-    'Częstotliwości nadawcze [MHz] ',
-    'Częstotliwości odbiorcze [MHz] ',
-    'Szerokości kanałów nadawczych [kHz] ',
-    'Szerokości kanałów odbiorczych [kHz] ',
+    'Częstotliwości nadawcze [MHz]',
+    'Częstotliwości odbiorcze [MHz]',
+    'Szerokości kanałów nadawczych [kHz]',
+    'Szerokości kanałów odbiorczych [kHz]',
     'Operator',
     'Adres operatora'
 ]
-
-const types = {
-    "A": "Dyspozytorska",
-    "B": "Przywoławcza",
-    "C": "Transmisja danych",
-    "D": "Retransmisja",
-    "E": "Zdalne sterowanie",
-    "F": "Powiadamiania o alarmach",
-    "P": "Bezprzewodowe poszukiwanie osób",
-    "Q": "Mikrofony bezprzewodowe",
-    "R": "Reportażowa",
-    "T": "Trankingowa"
-}
+*/
 
 mapboxgl.accessToken = 'pk.eyJ1IjoieWFzaXUiLCJhIjoiY2o4dWF2dmZnMHEwODMzcnB6NmZ5cGpicCJ9.XzC5pC59qPSmqbLv2xBDQw';
 var map = new mapboxgl.Map({
@@ -58,13 +87,15 @@ map.addControl(new mapboxgl.GeolocateControl({
     trackUserLocation: true
 }));
 
+map.addControl(new mapboxgl.NavigationControl());
+
 map.on('load', function () {
 
     map.addSource("nadajniki", {
         type: "geojson",
         data: './data/data.geojson',
         //cluster: true,
-        clusterMaxZoom: 10, // Max zoom to cluster points on
+        clusterMaxZoom: 8, // Max zoom to cluster points on
         clusterRadius: 50
     });
 
@@ -119,10 +150,37 @@ map.on('load', function () {
         source: "nadajniki",
         filter: ["!", ["has", "point_count"]],
         paint: {
-            "circle-color": "#11b4da",
-            "circle-radius": 4,
+            "circle-color": [
+                'match',
+                ['get', 'networkType'],
+                "A", "#03a8a0",
+                "B", "#039c4b",
+                "C", "#66d313",
+                "D", "#fedf17",
+                "E", "#ff0984",
+                "F", "#21409a",
+                "P", "#04adff",
+                "Q", "#e48873",
+                "R", "#f16623",
+                "T", "#f44546",
+                '#11b4da'
+            ],
+            "circle-radius": [
+                '+',
+                ['/',
+                    ['number', ['get', 'mapRadius'], 1],
+                    10],
+                5
+            ],
             "circle-stroke-width": 1,
-            "circle-stroke-color": "#fff"
+            "circle-opacity": 0.8,
+            /*[
+                "+",
+                ["/", ['log10',
+                ['number', ['get', 'mapERP'], 1]],5],
+                0.5
+            ],*/
+            "circle-stroke-color": "#FFF"
         }
     });
 
@@ -133,7 +191,11 @@ map.on('load', function () {
         let description = ''
 
         for (let i in headers) {
-            description += '<b>' + headers[i] + ':</b> ' + e.features[0].properties[i] + '</br>'
+            if (i == 'networkType') {
+                description += '<b>' + headers[i] + ':</b> ' + e.features[0].properties[i] + ': '+ types[e.features[0].properties[i]] + '</br>';
+                continue
+            }
+            description += '<b>' + headers[i] + ':</b> ' + e.features[0].properties[i] + '</br>';
         }
 
         // Ensure that if the map is zoomed out such that multiple
@@ -143,10 +205,14 @@ map.on('load', function () {
             coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
         }
 
+        document.querySelector('#details').innerHTML = description;
+
+        /*
         new mapboxgl.Popup()
             .setLngLat(coordinates)
             .setHTML(description)
             .addTo(map);
+        */
     });
 
     // Change the cursor to a pointer when the mouse is over the places layer.

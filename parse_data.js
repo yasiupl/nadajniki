@@ -36,15 +36,20 @@ const parseToJSON = function (sheets, json) {
             if (j == 0) continue
             row = sheet.cells[j];
 
+            let propertiesSlugs = ['id', 'date', 'name', 'stationType', 'networkType', 'lat', 'lon', 'radius', 'location', 'erp', 'azimuth', 'elevation', 'polarization', 'gain', 'antennaHeight', 'groundHeight', 'horizontalCharacteristic', 'verticalCharacteristic', 'tx', 'rx', 'txSpan', 'rxSpan', 'op', 'opAdress'];
+            
+            
+            
             //agregate points in the same place
             let id = (row[5] + row[6]).split(/N|S|W|E|'|"/).join(''); // could agregate points in different hemispheres (we work just on Poland, so doesnt matter)
             json[id] = json[id] || [];
 
             for (let k in row) {
-                json[id][k] = json[id][k] || [];
+                property = propertiesSlugs[k];
+                json[id][property] = json[id][property] || [];
                 //compare with last property, if its different, add it.
-                if (json[id][k].indexOf(row[k]) == -1) {
-                    json[id][k].push(row[k])
+                if (json[id][property].indexOf(row[k]) == -1) {
+                    json[id][property].push(row[k])
                 } else continue;
             }
         }
@@ -67,18 +72,23 @@ const parseToGeoJSON = function (data) {
     for (let i in data) {
         let row = data[i]
 
-        let properties = []
+        let properties = {}
 
-        for(let j in row) {
-            properties.push(row[j].join(', '));
+        for (let j in row) {
+            properties[j] = row[j].join(', ');
         }
-        
+
+
+        //Mapbox spłaszcza parametry, i nie możemy działać na tablicach :/
+        properties.mapRadius = parseInt(Array.isArray(row.radius)? row.radius[0] : row.radius);
+        properties.mapERP = parseInt(Array.isArray(row.erp)? row.erp[0] : row.erp);
+
         geojson.features.push({
             "type": "Feature",
             "properties": properties,
             "geometry": {
                 "type": "Point",
-                "coordinates": [parseLatLon(row[5][0]), parseLatLon(row[6][0])]
+                "coordinates": [parseLatLon(properties.lat), parseLatLon(properties.lon)]
             }
         });
 

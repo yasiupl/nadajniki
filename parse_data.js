@@ -5,22 +5,24 @@ const unzipper = require('unzipper');
 const path = require('path');
 const fs = require('fs');
 const xlsx = require('xlsx-extractor');
+const crypto = require('crypto');
 
-const parseFiles = function () {
+ const parseFiles = function () {
     console.log("Przetwarzanie")
 
     let json = {}
 
-    fs.readdir(path.join(__dirname, 'data'), function (err, files) {
-        files.forEach(function (file) {
-            xlsx.extractAll('./data/' + file)
+    fs.readdir(path.join(__dirname, 'data'), async function (err, files) {
+        for(const file of files) {
+            await xlsx.extractAll('./data/' + file)
                 .then((sheets) => {
                     json = parseToJSON(sheets, json);
-                    parseToGeoJSON(json);
                 })
                 .catch((err) => console.log(err));
-        });
+        }
+        saveToFiles(json)
     });
+    
 }
 
 const parseToJSON = function (sheets, json) {
@@ -37,29 +39,78 @@ const parseToJSON = function (sheets, json) {
             row = sheet.cells[j];
 
             let propertiesSlugs = ['id', 'date', 'name', 'stationType', 'networkType', 'lat', 'lon', 'radius', 'location', 'erp', 'azimuth', 'elevation', 'polarization', 'gain', 'antennaHeight', 'groundHeight', 'horizontalCharacteristic', 'verticalCharacteristic', 'tx', 'rx', 'txSpan', 'rxSpan', 'op', 'opAdress'];
+
+            //agregate points in the same place, owned by the same company
+            let op = row[22]
+            let tower = (row[5] + row[6]).split(/N|S|W|E|'|"/).join(''); // could agregate points in different hemispheres (we work just on Poland, so doesnt matter)
             
-            
-            
-            //agregate points in the same place
-            let id = (row[5] + row[6]).split(/N|S|W|E|'|"/).join(''); // could agregate points in different hemispheres (we work just on Poland, so doesnt matter)
-            json[id] = json[id] || [];
+            json[op] = json[op] || [];
+            json[op][tower] = json[op][tower] || {};
 
             for (let k in row) {
                 property = propertiesSlugs[k];
-                json[id][property] = json[id][property] || [];
+                json[op][tower][property] = json[op][tower][property] || [];
                 //compare with last property, if its different, add it.
-                if (json[id][property].indexOf(row[k]) == -1) {
-                    json[id][property].push(row[k])
+                if (json[op][tower][property].indexOf(row[k]) == -1) {
+                    json[op][tower][property].push(row[k])
                 } else continue;
             }
         }
-        fs.writeFile('./dist/data/data.json', JSON.stringify(json), 'utf8', function (err) {
-            if (err) {
-                return console.log(err);
-            }
-        });
         return json
     }
+}
+
+const saveToFiles = function (json) {
+
+    // Dla jakiej minimalnej ilości nadajników rozdzielić firmę do osobnego pliku.
+    const treshold = 10;
+
+    let countAll = 0;
+    let companies = 0;
+    let masts = 0;
+
+    let singles = [];
+    let small = [];
+    let fileNames = {};
+    let geojson = {};
+
+    for(let i in json) {
+        let company = json[i];
+        let towers = [];
+        for(let j in company) {
+            countAll++;
+            let tower = company[j];
+            if(Object.keys(company).length > treshold) {
+                towers.push(tower);
+            } else if(Object.keys(company).length > 1) {
+                small.push(tower);
+            } else singles.push(tower);
+        }
+        if(towers.length) {
+            console.log(i + ': ' + towers.length);
+
+            companies++;
+            masts += towers.length;
+            
+            let hash = crypto.createHash('md5').update(i.replace(/["|'|-|_|/|\|.| ]/g, "_")).digest('hex');
+            fileNames[hash] = '[' + towers.length + '] ' + i; 
+            saveJSONToFile(parseToGeoJSON(towers), './dist/data/', hash + '.geojson');
+        }
+    }
+
+    console.log('Firm: ' + Object.keys(json).length)
+    console.log('Firm spełniających kryterium: ' + companies);
+    console.log('Nadajników spełniających kryterium: ' + masts);
+    console.log('Małe sieci: ' + small.length);
+    console.log('Pojedyńcze nadajniki: ' + singles.length);
+    console.log('Unikalnych punktów: ' + countAll);
+
+    fileNames['singles'] = '[' + singles.length + '] Pojedyńcze';
+    fileNames['small'] = '[' + small.length + '] Małe sieci';
+    saveJSONToFile(fileNames, './src/','sources.json');
+
+    saveJSONToFile(parseToGeoJSON(singles), './dist/data/', 'singles.geojson');
+    saveJSONToFile(parseToGeoJSON(small), './dist/data/', 'small.geojson');
 }
 
 const parseToGeoJSON = function (data) {
@@ -80,8 +131,8 @@ const parseToGeoJSON = function (data) {
 
 
         //Mapbox spłaszcza parametry, i nie możemy działać na tablicach :/
-        properties.mapRadius = parseInt(Array.isArray(row.radius)? row.radius[0] : row.radius);
-        properties.mapERP = parseInt(Array.isArray(row.erp)? row.erp[0] : row.erp);
+        properties.mapRadius = parseInt(Array.isArray(row.radius) ? row.radius[0] : row.radius);
+        properties.mapERP = parseInt(Array.isArray(row.erp) ? row.erp[0] : row.erp);
 
         geojson.features.push({
             "type": "Feature",
@@ -93,14 +144,15 @@ const parseToGeoJSON = function (data) {
         });
 
     }
+    return geojson
+}
 
-    console.log('Prztworzono punktów: ' + geojson.features.length)
-    fs.writeFile('./dist/data/data.geojson', JSON.stringify(geojson), 'utf8', function (err) {
+const saveJSONToFile = function (data, path, name) {
+    fs.writeFile(path + name, JSON.stringify(data), 'utf8', function (err) {
         if (err) {
             return console.log(err);
         }
     });
-    return geojson
 }
 
 const parseLatLon = function (coordinate = '') {

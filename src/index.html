@@ -1,11 +1,76 @@
-
 <html>
-    <head>
-      <title><%= htmlWebpackPlugin.options.title %></title>
-    </head>
-    <body style="margin: unset">
-      <div id="details" style="width: 20%; height: 100%;float:right;"></div>
-      <div id="map" style="width: 80%; height: 100%;"></div>
-      <script src="bundle.js"></script>
-    </body>
-  </html>
+
+<head>
+  <title><%= htmlWebpackPlugin.options.title %></title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 80%;
+      height: 100%;
+    }
+
+    #details {
+      width: 20%;
+      height: 100%;
+      float: right;
+    }
+
+    #menu {
+      background: #fff;
+      position: absolute;
+      z-index: 1;
+      top: 101%;
+      border-radius: 3px;
+      width: 100%;
+      border: 1px solid rgba(0, 0, 0, 0.4);
+      font-family: 'Open Sans', sans-serif;
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+    }
+
+    #menu a {
+      font-size: 13px;
+      color: #404040;
+      display: inline-block;
+      margin: 0;
+      padding: 10px;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+      text-align: center;
+    }
+
+    #menu a:last-child {
+      border: none;
+    }
+
+    #menu a:hover {
+      background-color: #f8f8f8;
+      color: #404040;
+    }
+
+    #menu a.active {
+      background-color: #3887be;
+      color: #ffffff;
+    }
+
+    #menu a.active:hover {
+      background: #3074a4;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="details"></div>
+  <div id="map"></div>
+  <div id="menu"></div>
+</body>
+
+</html>

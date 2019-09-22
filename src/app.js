@@ -1,5 +1,8 @@
+import 'materialize-css/dist/js/materialize.min.js'
 import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import sources from './sources.json'
+import './style.scss'
+
 
 const headers = {
     id: 'Nr pozwolenia',
@@ -70,85 +73,16 @@ const headers = [
 ]
 */
 
-mapboxgl.accessToken = 'pk.eyJ1IjoieWFzaXUiLCJhIjoiY2o4dWF2dmZnMHEwODMzcnB6NmZ5cGpicCJ9.XzC5pC59qPSmqbLv2xBDQw';
-var map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/outdoors-v10',
-    hash: true,
-    center: [19.134422, 51.919231],
-    zoom: 6
-});
+function addLayerFromHash(map, hash) {
 
-// Add geolocate control to the map.
-map.addControl(new mapboxgl.GeolocateControl({
-    positionOptions: {
-        enableHighAccuracy: true
-    },
-    trackUserLocation: true
-}));
-
-map.addControl(new mapboxgl.NavigationControl());
-
-map.on('load', function () {
-
-    map.addSource("nadajniki", {
-        type: "geojson",
-        data: './data/data.geojson',
-        //cluster: true,
-        clusterMaxZoom: 8, // Max zoom to cluster points on
-        clusterRadius: 50
-    });
-
+    //if (typeof map.getLayer(hash) !== 'undefined') {
     map.addLayer({
-        id: "clusters",
+        id: hash,
         type: "circle",
-        source: "nadajniki",
-        filter: ["has", "point_count"],
-        paint: {
-            // Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
-            // with three steps to implement three types of circles:
-            //   * Blue, 20px circles when point count is less than 100
-            //   * Yellow, 30px circles when point count is between 100 and 750
-            //   * Pink, 40px circles when point count is greater than or equal to 750
-            "circle-color": [
-                "step",
-                ["get", "point_count"],
-                "#51bbd6",
-                100,
-                "#f1f075",
-                750,
-                "#f28cb1"
-            ],
-            "circle-radius": [
-                "step",
-                ["get", "point_count"],
-                20,
-                100,
-                30,
-                750,
-                40
-            ]
-        }
-    });
-
-    map.addLayer({
-        id: "cluster-count",
-        type: "symbol",
-        source: "nadajniki",
-        filter: ["has", "point_count"],
-        layout: {
-            "text-field": "{point_count_abbreviated}",
-            "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
-            "text-size": 12
-        }
-    });
-
-    // Add a layer showing the places.
-    map.addLayer({
-        id: "unclustered-point",
-        type: "circle",
-        source: "nadajniki",
-        filter: ["!", ["has", "point_count"]],
+        source: {
+            type: "geojson",
+            data: './data/' + hash + '.geojson'
+        },
         paint: {
             "circle-color": [
                 'match',
@@ -184,15 +118,16 @@ map.on('load', function () {
         }
     });
 
+
     // When a click event occurs on a feature in the places layer, open a popup at the
     // location of the feature, with description HTML from its properties.
-    map.on('click', 'unclustered-point', function (e) {
+    map.on('click', hash, function (e) {
         let coordinates = e.features[0].geometry.coordinates.slice();
         let description = ''
 
         for (let i in headers) {
             if (i == 'networkType') {
-                description += '<b>' + headers[i] + ':</b> ' + e.features[0].properties[i] + ': '+ types[e.features[0].properties[i]] + '</br>';
+                description += '<b>' + headers[i] + ':</b> ' + e.features[0].properties[i] + ': ' + types[e.features[0].properties[i]] + '</br>';
                 continue
             }
             description += '<b>' + headers[i] + ':</b> ' + e.features[0].properties[i] + '</br>';
@@ -216,12 +151,101 @@ map.on('load', function () {
     });
 
     // Change the cursor to a pointer when the mouse is over the places layer.
-    map.on('mouseenter', 'unclustered-point', function () {
+    map.on('mouseenter', hash, function () {
         map.getCanvas().style.cursor = 'pointer';
     });
 
     // Change it back to a pointer when it leaves.
-    map.on('mouseleave', 'unclustered-point', function () {
+    map.on('mouseleave', hash, function () {
         map.getCanvas().style.cursor = '';
     });
+    //}
+}
+
+
+mapboxgl.accessToken = 'pk.eyJ1IjoieWFzaXUiLCJhIjoiY2o4dWF2dmZnMHEwODMzcnB6NmZ5cGpicCJ9.XzC5pC59qPSmqbLv2xBDQw';
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v10',
+    hash: true,
+    center: [19.134422, 51.919231],
+    zoom: 6
+});
+
+// Add geolocate control to the map.
+map.addControl(new mapboxgl.GeolocateControl({
+    positionOptions: {
+        enableHighAccuracy: true
+    },
+    trackUserLocation: true
+}));
+
+map.addControl(new mapboxgl.NavigationControl());
+
+
+map.on('load', function () {
+    //addLayerFromHash(map, 'leftovers')
+    let layers = document.getElementById('layers');
+
+    let toggleAll = document.createElement('li');
+    toggleAll.id = 'all';
+    toggleAll.textContent = 'Przełącz Wszystkie';
+    toggleAll.onclick = toggleAllLayers;
+    layers.appendChild(toggleAll);
+
+    for (let i in sources) {
+        console.log(sources[i].name)
+        // Add a layer showing the places.
+        addLayerFromHash(map, sources[i].hash);
+
+        let link = document.createElement('li');
+        link.id = sources[i].hash;
+        link.textContent = '[' + sources[i].length + '] ' + sources[i].name;
+        link.className = 'active';
+        link.onclick = toggleLayerButton;
+        layers.appendChild(link);
+    }
+});
+
+function toggleLayerButton(e) {
+
+    let hash = this.id;
+    e.preventDefault();
+    e.stopPropagation();
+
+    let visibility = map.getLayoutProperty(hash, 'visibility');
+
+    if (visibility === 'visible') {
+        map.setLayoutProperty(hash, 'visibility', 'none');
+        this.className = '';
+    } else {
+        this.className = 'active';
+        map.setLayoutProperty(hash, 'visibility', 'visible');
+    }
+}
+
+function toggleAllLayers(e) {
+    let status = this.className
+    e.preventDefault();
+    e.stopPropagation();
+    for (let i in sources) {
+        let hash = sources[i].hash;
+        let button = document.getElementById(hash);
+
+
+        if (status == 'active') {
+            map.setLayoutProperty(hash, 'visibility', 'none');
+            this.className = '';
+            button.className = '';
+        } else {
+            this.className = 'active';
+            button.className = 'active';
+            map.setLayoutProperty(hash, 'visibility', 'visible');
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    M.Sidenav.init(document.querySelector('#layers'), {edge:'right'});
+    M.Sidenav.init(document.querySelector('#menu'));
 });

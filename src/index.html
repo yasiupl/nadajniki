@@ -1,10 +1,33 @@
-
 <html>
-    <head>
-      <title><%= htmlWebpackPlugin.options.title %></title>
-    </head>
-    <body style="margin: unset">
-      <div id="details" style="width: 20%; height: 100%;float:right;"></div>
-      <div id="map" style="width: 80%; height: 100%;"></div>
-    </body>
-  </html>
+
+
+<head>
+  <title><%= htmlWebpackPlugin.options.title %></title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+
+<body>
+  <nav>
+    <div class="nav-wrapper">
+      <a href="#" data-target="menu" class="sidenav-trigger show-on-large"><i class="material-icons">menu</i></a>
+      <a href="#!" class="brand-logo center"><%= htmlWebpackPlugin.options.title %></a>
+      <a href="#" data-target="layers" class="sidenav-trigger show-on-large right"><i
+          class="material-icons">settings</i></a>
+    </div>
+  </nav>
+
+  <ul class="sidenav" id="layers">
+    <li><a class="sidenav-close" href="#!">Clicking this will close Sidenav</a></li>
+  </ul>
+
+  <ul class="sidenav" id="menu">
+      <li><a class="sidenav-close" href="#!">Clicking this will close Sidenav</a></li>
+    </ul>
+
+  <main>
+    <div id="map"></div>
+    <div id="details"></div>
+  </main>
+</body>
+
+</html>

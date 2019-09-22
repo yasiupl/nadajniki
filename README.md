@@ -5,7 +5,7 @@
 Mapa wyświetlająca dane z wykazu pozwoleń radiowych dla klasycznych sieci radiokomunikacji ruchomej lądowej UKE.
 
 Dane:
-https://dane.gov.pl/dataset/1070/resource/18769
+https://dane.gov.pl/dataset/1070
 
 Legenda:
 https://archiwum.uke.gov.pl/files/?id_plik=6730

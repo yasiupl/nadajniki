@@ -2,75 +2,31 @@
 
 <head>
   <title><%= htmlWebpackPlugin.options.title %></title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-    }
-
-    #map {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 80%;
-      height: 100%;
-    }
-
-    #details {
-      width: 20%;
-      height: 100%;
-      float: right;
-    }
-
-    #menu {
-      background: #fff;
-      position: absolute;
-      z-index: 1;
-      top: 101%;
-      border-radius: 3px;
-      width: 100%;
-      border: 1px solid rgba(0, 0, 0, 0.4);
-      font-family: 'Open Sans', sans-serif;
-      display: flex;
-      justify-content: space-around;
-      flex-wrap: wrap;
-    }
-
-    #menu a {
-      font-size: 13px;
-      color: #404040;
-      display: inline-block;
-      margin: 0;
-      padding: 10px;
-      text-decoration: none;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.25);
-      text-align: center;
-    }
-
-    #menu a:last-child {
-      border: none;
-    }
-
-    #menu a:hover {
-      background-color: #f8f8f8;
-      color: #404040;
-    }
-
-    #menu a.active {
-      background-color: #3887be;
-      color: #ffffff;
-    }
-
-    #menu a.active:hover {
-      background: #3074a4;
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 
 <body>
-  <div id="details"></div>
-  <div id="map"></div>
-  <div id="menu"></div>
+  <nav>
+    <div class="nav-wrapper">
+      <a href="#" data-target="menu" class="sidenav-trigger show-on-large"><i class="material-icons">menu</i></a>
+      <a href="#!" class="brand-logo center"><%= htmlWebpackPlugin.options.title %></a>
+      <a href="#" data-target="layers" class="sidenav-trigger show-on-large right"><i
+          class="material-icons">settings</i></a>
+    </div>
+  </nav>
+
+  <ul class="sidenav" id="layers">
+    <li><a class="sidenav-close" href="#!">Clicking this will close Sidenav</a></li>
+  </ul>
+
+  <ul class="sidenav" id="menu">
+      <li><a class="sidenav-close" href="#!">Clicking this will close Sidenav</a></li>
+    </ul>
+
+  <main>
+    <div id="map"></div>
+    <div id="details"></div>
+  </main>
 </body>
 
 </html>

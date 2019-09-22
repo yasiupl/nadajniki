@@ -7,13 +7,13 @@ const fs = require('fs');
 const xlsx = require('xlsx-extractor');
 const crypto = require('crypto');
 
- const parseFiles = function () {
+const parseFiles = function () {
     console.log("Przetwarzanie")
 
     let json = {}
 
     fs.readdir(path.join(__dirname, 'data'), async function (err, files) {
-        for(const file of files) {
+        for (const file of files) {
             await xlsx.extractAll('./data/' + file)
                 .then((sheets) => {
                     json = parseToJSON(sheets, json);
@@ -22,7 +22,7 @@ const crypto = require('crypto');
         }
         saveToFiles(json)
     });
-    
+
 }
 
 const parseToJSON = function (sheets, json) {
@@ -34,16 +34,13 @@ const parseToJSON = function (sheets, json) {
         console.log('Rekordów:' + sheet.cells.length);
 
         for (let j in sheet.cells) {
-
             if (j == 0) continue
             row = sheet.cells[j];
 
             let propertiesSlugs = ['id', 'date', 'name', 'stationType', 'networkType', 'lat', 'lon', 'radius', 'location', 'erp', 'azimuth', 'elevation', 'polarization', 'gain', 'antennaHeight', 'groundHeight', 'horizontalCharacteristic', 'verticalCharacteristic', 'tx', 'rx', 'txSpan', 'rxSpan', 'op', 'opAdress'];
-
+            let op = row[22].toLowerCase();
+            let tower = (row[5] + row[6]).split(/N|S|W|E|'|"/).join('');
             //agregate points in the same place, owned by the same company
-            let op = row[22]
-            let tower = (row[5] + row[6]).split(/N|S|W|E|'|"/).join(''); // could agregate points in different hemispheres (we work just on Poland, so doesnt matter)
-            
             json[op] = json[op] || [];
             json[op][tower] = json[op][tower] || {};
 
@@ -63,7 +60,7 @@ const parseToJSON = function (sheets, json) {
 const saveToFiles = function (json) {
 
     // Dla jakiej minimalnej ilości nadajników rozdzielić firmę do osobnego pliku.
-    const treshold = 10;
+    const treshold = 100;
 
     let countAll = 0;
     let companies = 0;
@@ -71,43 +68,104 @@ const saveToFiles = function (json) {
 
     let singles = [];
     let small = [];
-    let fileNames = {};
+
+    const customList = [
+        { name: "Szkoły Wyższe", match: /\buniwersytet|\bpolitechnik|\bakademi|\bszkoła wyższa/, data: [] },
+        { name: "Lasy Państwowe", match: /\bnadleśnictwo|\bnadlesnictwo|\blasy|\blasów/, data: [] },
+        { name: "Parki Narodowe", match: /(\bpark).*(\bnarodowy)/, data: [] },
+        { name: "Drogi", match: /\bdróg|\bdrogi|\bautostrad/, data: [] },
+        { name: "Straż Miejska", match: /(\bstraż).*(\bmiejsk)/, data: [] },
+        { name: "Straż Pożarna", match: /(\bstraż).*(\bpożar)|\bpożar/, data: [] },
+        { name: "Pogotowie Ochotnicze", match: /(\bochotnicz).*(\bpogotow)/, data: [] },
+        { name: "Pogotowie Lotnicze", match: /(\blotnicz).*(\bpogotow)/, data: [] },
+        { name: "Pogotowie Ratunkowe", match: /\bpogotowi|\bszpital|\bopieki|\bopieka|\bnfz |\b zoz |\bratownictw|\bmedycyna/, data: [] },
+        { name: "Sport", match: /\bsport|\bbieg/, data: [] },
+        { name: "Taxi, Transport, Komunikacja", match: /\bkomunikacja|\bkomunikacji|\bkomunikacyj|\btramwaj|\bautobus|\btaxi|\btaksówk|\btransport|\bprzewoźnik|\bprzewóz osób/, data: [] },
+        { name: "Kolej", match: /\bpkp|\bkolej|\brail|\b db /, data: [] },
+        { name: "Wodociagi", match: /\bwodocią|\bwoda|\bwodno|\bwodo/, data: [] },
+        { name: "Odpady", match: /\bodpad|\butyliza|\boczyszcza|\bkanaliza/, data: [] },
+        { name: "Gospodarka Wodna", match: /\bgospodarki wodnej|(\bgospodar).*(\bwod)/, data: [] },
+        { name: "Ciepłownie", match: /\bciepło|\bciepła|\bcieplne|\bcieplna/, data: [] },
+        { name: "Elektrownie", match: /\belektrow|\benergety/, data: [] },
+        { name: "Gazownictwo", match: /\bgazociąg|\bgazownictw/, data: [] },
+        { name: "Wydobystwo", match: /\bkghm|\bkopalni|\bgórnict|\bwęgiel/, data: [] },
+        { name: "Gminy", match: /\bgmina|\bgminy|\bgminna/, data: [] },
+        { name: "Powiaty", match: /\bpowiat|\bstarost/, data: [] },
+        { name: "Miasta", match: /\bmiasto|\bmiasta|\bmiejski|(\burząd).*(\bmiejsk|\bmiast)|\bprezydent|\bburmistrz/, data: [] },
+        { name: "Województwa", match: /\bwojewoda|\bwojewództwo/, data: [] },
+        { name: "Ochrona", match: /\bochrony|\bochrona|\bsecur|\bprotec|\bsolid|\bdetektyw|\b997|\bmienie|\bmienia|\binterwencj/, data: [] },
+        { name: "Lotnictwo", match: /\bairport|\blotnis|\blotnicz/, data: [] },
+        { name: "Porty", match: /\bport|\bmorski/, data: [] },
+        { name: "Kultura", match: /\bmuzeum|\bmuzea|\bteatr|\bfilharmon|\bkultur/, data: [] },
+        { name: "Banki", match: /\bbank/, data: [] },
+        { name: "Lotos", match: /\blotos/, data: [] },
+        /*{ name: "PGE", match: /\bpge/, data: [] },
+        { name: "Tauron", match: /\btauron/, data: [] },
+        { name: "Energa", match: /\benerga/, data: [] },
+        { name: "Telewizja", match: /\btvp|\btelewizja/, data: [] },
+        { name: "Działalność Osobowa", match: /\bpod nazwą|\bpod firmą|\bprowadzący/, data: [] },
+        { name: "Spółka z o.o.", match: /(\bsp.|\bsp ).*(\bz o.o|\bz o. o|\bz  o. o|\bz  o.o)|\bspółka z ograniczoną odpowiedzialnością/, data: [] },
+        { name: "Spółka Akcyjna.", match: /\bs.a|\bspółka akcyjna|\bs. a.|\b sa/, data: [] }*/
+    ];
+
+    let sources = [];
     let geojson = {};
 
-    for(let i in json) {
+    for (let i in json) {
         let company = json[i];
         let towers = [];
-        for(let j in company) {
+        companyLoop:
+        for (let j in company) {
             countAll++;
             let tower = company[j];
-            if(Object.keys(company).length > treshold) {
+
+            for (let k in customList) {
+                let list = customList[k];
+                if (tower.op[0].toLowerCase().match(list.match)) {
+                    list.data.push(tower);
+                    continue companyLoop
+                };
+            }
+
+            let companyLength = Object.keys(company).length;
+            if (companyLength > treshold) {
                 towers.push(tower);
-            } else if(Object.keys(company).length > 1) {
+            } else if (companyLength > 1) {
                 small.push(tower);
             } else singles.push(tower);
+
         }
-        if(towers.length) {
+        if (towers.length) {
             console.log(i + ': ' + towers.length);
 
             companies++;
             masts += towers.length;
-            
-            let hash = crypto.createHash('md5').update(i.replace(/["|'|-|_|/|\|.| ]/g, "_")).digest('hex');
-            fileNames[hash] = '[' + towers.length + '] ' + i; 
-            saveJSONToFile(parseToGeoJSON(towers), './dist/data/', hash + '.geojson');
+
+            let hashedName = crypto.createHash('md5').update(i.replace(/["|'|-|_|/|\|.| ]/g, "_")).digest('hex');
+            sources.push({ length: towers.length, name: i, hash: hashedName });
+            saveJSONToFile(parseToGeoJSON(towers), './dist/data/', hashedName + '.geojson');
         }
     }
 
-    console.log('Firm: ' + Object.keys(json).length)
+    for (let k in customList) {
+        let list = customList[k];
+        let filename = list.name.toLowerCase().replace(" ", "_");
+        console.log(list.name + ': ' + list.data.length);
+        sources.push({ length: list.data.length, name: list.name, hash: filename });
+        saveJSONToFile(parseToGeoJSON(list.data), './dist/data/', filename + '.geojson');
+    }
+
+    console.log('\nFirm: ' + Object.keys(json).length)
     console.log('Firm spełniających kryterium: ' + companies);
     console.log('Nadajników spełniających kryterium: ' + masts);
     console.log('Małe sieci: ' + small.length);
     console.log('Pojedyńcze nadajniki: ' + singles.length);
     console.log('Unikalnych punktów: ' + countAll);
 
-    fileNames['singles'] = '[' + singles.length + '] Pojedyńcze';
-    fileNames['small'] = '[' + small.length + '] Małe sieci';
-    saveJSONToFile(fileNames, './src/','sources.json');
+    sources.push({ length: singles.length, name: 'Pojedyńcze', hash: 'singles' });
+    sources.push({ length: small.length, name: 'Małe sieci', hash: 'small' });
+    sources.sort((a, b) => (a.length < b.length) ? 1 : -1);
+    saveJSONToFile(sources, './src/', 'sources.json');
 
     saveJSONToFile(parseToGeoJSON(singles), './dist/data/', 'singles.geojson');
     saveJSONToFile(parseToGeoJSON(small), './dist/data/', 'small.geojson');

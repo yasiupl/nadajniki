@@ -1,0 +1,31 @@
+@import '~mapbox-gl/dist/mapbox-gl.css';
+@import '~materialize-css/sass/materialize.scss';
+
+$primary-color: color("materialize-black") !default;
+  $primary-color-light: false !default;
+  $primary-color-dark: false !default;
+  @if not $primary-color-light {
+    $primary-color-light: lighten($primary-color, 15%);
+  }
+  @if not $primary-color-dark {
+    $primary-color-dark: darken($primary-color, 15%);
+  }
+  $secondary-color: color("teal", "lighten-1") !default;
+  $success-color: color("green", "base") !default;
+  $error-color: color("red", "base") !default;
+
+  $link-color: color("light-blue", "darken-1") !default;
+
+  html,
+  body {
+    display: flex;
+    flex-flow: column;
+    height: 100%;
+  }
+  main {
+    height:100%;
+  }
+
+#map {
+    height:100%
+}

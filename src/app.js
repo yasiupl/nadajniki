@@ -1,6 +1,8 @@
+import 'materialize-css/dist/js/materialize.min.js'
 import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
 import sources from './sources.json'
+import './style.scss'
+
 
 const headers = {
     id: 'Nr pozwolenia',
@@ -183,34 +185,22 @@ map.addControl(new mapboxgl.NavigationControl());
 
 map.on('load', function () {
     //addLayerFromHash(map, 'leftovers')
-    let layers = document.getElementById('menu');
+    let layers = document.getElementById('layers');
 
-    let toggleAll = document.createElement('a');
+    let toggleAll = document.createElement('li');
     toggleAll.id = 'all';
     toggleAll.textContent = 'Przełącz Wszystkie';
     toggleAll.onclick = toggleAllLayers;
     layers.appendChild(toggleAll);
 
-    let toggleRest = document.createElement('a');
-    toggleRest.id = 'singles';
-    toggleRest.textContent = sources['singles'];
-    toggleRest.onclick = toggleLayerButton;
-    layers.appendChild(toggleRest);
-
-    let toggleSmall = document.createElement('a');
-    toggleSmall.id = 'small';
-    toggleSmall.textContent = sources['small'];
-    toggleSmall.onclick = toggleLayerButton;
-    layers.appendChild(toggleSmall);
-
-    for (let hash in sources) {
-        console.log(sources[hash])
+    for (let i in sources) {
+        console.log(sources[i].name)
         // Add a layer showing the places.
-        addLayerFromHash(map, hash);
+        addLayerFromHash(map, sources[i].hash);
 
-        let link = document.createElement('a');
-        link.id = hash;
-        link.textContent = sources[hash];
+        let link = document.createElement('li');
+        link.id = sources[i].hash;
+        link.textContent = '[' + sources[i].length + '] ' + sources[i].name;
         link.className = 'active';
         link.onclick = toggleLayerButton;
         layers.appendChild(link);
@@ -234,17 +224,28 @@ function toggleLayerButton(e) {
     }
 }
 
-function toggleAllLayers() {
-    for (let hash in sources) {
+function toggleAllLayers(e) {
+    let status = this.className
+    e.preventDefault();
+    e.stopPropagation();
+    for (let i in sources) {
+        let hash = sources[i].hash;
         let button = document.getElementById(hash);
-        let visibility = map.getLayoutProperty(hash, 'visibility');
 
-    if (visibility === 'visible') {
-        map.setLayoutProperty(hash, 'visibility', 'none');
-        button.className = '';
-    } else {
-        button.className = 'active';
-        map.setLayoutProperty(hash, 'visibility', 'visible');
-    }
+
+        if (status == 'active') {
+            map.setLayoutProperty(hash, 'visibility', 'none');
+            this.className = '';
+            button.className = '';
+        } else {
+            this.className = 'active';
+            button.className = 'active';
+            map.setLayoutProperty(hash, 'visibility', 'visible');
+        }
     }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    M.Sidenav.init(document.querySelector('#layers'), {edge:'right'});
+    M.Sidenav.init(document.querySelector('#menu'));
+});

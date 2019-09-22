@@ -1,4 +1,5 @@
-const source = 'https://api.dane.gov.pl/media/resources/20140430/wykaz_pozwolen_rrl.zip';
+
+const danegovplAPI = 'https://api.dane.gov.pl/resources/19111';
 
 const request = require('request');
 const unzipper = require('unzipper');
@@ -7,7 +8,7 @@ const fs = require('fs');
 const xlsx = require('xlsx-extractor');
 const crypto = require('crypto');
 
-const parseFiles = function () {
+function parseFiles() {
     console.log("Przetwarzanie")
 
     let json = {}
@@ -20,12 +21,12 @@ const parseFiles = function () {
                 })
                 .catch((err) => console.log(err));
         }
-        saveToFiles(json)
+        processData(json)
     });
 
 }
 
-const parseToJSON = function (sheets, json) {
+function parseToJSON(sheets, json) {
     for (let i in sheets) {
 
         let sheet = sheets[i];
@@ -57,7 +58,7 @@ const parseToJSON = function (sheets, json) {
     }
 }
 
-const saveToFiles = function (json) {
+function processData(json) {
 
     // Dla jakiej minimalnej ilości nadajników rozdzielić firmę do osobnego pliku.
     const treshold = 100;
@@ -171,7 +172,7 @@ const saveToFiles = function (json) {
     saveJSONToFile(parseToGeoJSON(small), './dist/data/', 'small.geojson');
 }
 
-const parseToGeoJSON = function (data) {
+function parseToGeoJSON(data) {
 
     let geojson = {
         "type": "FeatureCollection",
@@ -205,7 +206,7 @@ const parseToGeoJSON = function (data) {
     return geojson
 }
 
-const saveJSONToFile = function (data, path, name) {
+function saveJSONToFile(data, path, name) {
     fs.writeFile(path + name, JSON.stringify(data), 'utf8', function (err) {
         if (err) {
             return console.log(err);
@@ -213,17 +214,25 @@ const saveJSONToFile = function (data, path, name) {
     });
 }
 
-const parseLatLon = function (coordinate = '') {
+function parseLatLon(coordinate = '') {
     let sign = 1;
     if (coordinate.match(/S|W/)) sign = -1;
     coordinate = coordinate.split(/N|S|W|E|'|"/);
     return Number.parseFloat((parseInt(coordinate[0]) + parseInt(coordinate[1]) / 60 + parseInt(coordinate[2]) / 3600).toFixed(6)) * sign;
 }
 
-// Download and unzip 
-if (fs.existsSync('data')) {
-    parseFiles()
-} else {
-    console.log("Pobieram dane z " + source);
-    request(source).pipe(unzipper.Extract({ path: path.resolve(__dirname, 'data') })).on('finish', parseFiles);
+function searchAndDestroy() {
+    // Download and unzip 
+    if (fs.existsSync('data')) {
+        parseFiles()
+    } else {
+        console.log("Pobieram dane z " + danegovplAPI);
+        request({ url: danegovplAPI, json: true }, function (error, response, body) {
+            const source = body.data.attributes.file_url;
+            console.log("Pobieram dane z " + source);
+            request(source).pipe(unzipper.Extract({ path: path.resolve(__dirname, 'data') })).on('finish', parseFiles);
+        });
+    }
 }
+
+searchAndDestroy();

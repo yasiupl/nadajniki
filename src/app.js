@@ -140,14 +140,14 @@ function addLayerFromHash(map, hash) {
             coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
         }
 
-        document.querySelector('#details').innerHTML = description;
+        //document.querySelector('#details').innerHTML = description;
 
-        /*
+        
         new mapboxgl.Popup()
             .setLngLat(coordinates)
             .setHTML(description)
             .addTo(map);
-        */
+        
     });
 
     // Change the cursor to a pointer when the mouse is over the places layer.

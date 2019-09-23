@@ -33,7 +33,7 @@
   //@extend .hide-on-med-and-down;
   @extend .card-panel;
 
-    @media #{$small-and-down} {
+    @media #{$medium-and-down} {
       top: unset;
       bottom: 0px;
       width: 98%;

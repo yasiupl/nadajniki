@@ -45,6 +45,7 @@ const types = {
     T: "Trunkingowa"
 }
 
+
 /* 
 const headers = [
     'Nr pozwolenia',

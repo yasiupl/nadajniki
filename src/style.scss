@@ -1,31 +1,43 @@
 @import '~mapbox-gl/dist/mapbox-gl.css';
 @import '~materialize-css/sass/materialize.scss';
 
-$primary-color: color("materialize-black") !default;
-  $primary-color-light: false !default;
-  $primary-color-dark: false !default;
-  @if not $primary-color-light {
-    $primary-color-light: lighten($primary-color, 15%);
-  }
-  @if not $primary-color-dark {
-    $primary-color-dark: darken($primary-color, 15%);
-  }
-  $secondary-color: color("teal", "lighten-1") !default;
-  $success-color: color("green", "base") !default;
-  $error-color: color("red", "base") !default;
-
-  $link-color: color("light-blue", "darken-1") !default;
-
   html,
   body {
     display: flex;
     flex-flow: column;
     height: 100%;
   }
+
+  nav {
+    @extend .blue;
+  }
+
   main {
     height:100%;
   }
 
-#map {
-    height:100%
-}
+  #map {
+    flex: 0 1 auto;
+    //position: absolute;
+    height:100%;
+    width:100%;
+  }
+
+  .details {
+  position: absolute;
+  top: 72px;
+  left: 1vw;
+  width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  //@extend .hide-on-med-and-down;
+  @extend .card-panel;
+
+    @media #{$small-and-down} {
+      top: unset;
+      bottom: 0px;
+      width: 98%;
+      left: 1%;
+      max-height: 50vh;
+    }
+  }

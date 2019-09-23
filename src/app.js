@@ -140,14 +140,15 @@ function addLayerFromHash(map, hash) {
             coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
         }
 
-        //document.querySelector('#details').innerHTML = description;
+        document.querySelector("#detailsClose").style.visibility = '';
+        document.querySelector('#details').innerHTML = description;
 
-        
+        /*
         new mapboxgl.Popup()
             .setLngLat(coordinates)
             .setHTML(description)
             .addTo(map);
-        
+        */
     });
 
     // Change the cursor to a pointer when the mouse is over the places layer.
@@ -188,8 +189,8 @@ map.on('load', function () {
     let layers = document.getElementById('layers');
 
     let toggleAll = document.createElement('li');
-    toggleAll.id = 'all';
-    toggleAll.textContent = 'Przełącz Wszystkie';
+    toggleAll.data = 'all';
+    toggleAll.innerHTML = '<a>Przełącz Wszystkie</a>';
     toggleAll.onclick = toggleAllLayers;
     layers.appendChild(toggleAll);
 
@@ -199,9 +200,8 @@ map.on('load', function () {
         addLayerFromHash(map, sources[i].hash);
 
         let link = document.createElement('li');
-        link.id = sources[i].hash;
-        link.textContent = '[' + sources[i].length + '] ' + sources[i].name;
-        link.className = 'active';
+        link.data = sources[i].hash;
+        link.innerHTML = '<a class="truncate"><label><input type="checkbox" id="'+sources[i].hash+'" checked="checked"/><span></span></label><span class="badge">' + sources[i].length + '</span>' + sources[i].name + '</a>';
         link.onclick = toggleLayerButton;
         layers.appendChild(link);
     }
@@ -209,7 +209,8 @@ map.on('load', function () {
 
 function toggleLayerButton(e) {
 
-    let hash = this.id;
+    let hash = this.data;
+    let checkbox = document.getElementById(hash);
     e.preventDefault();
     e.stopPropagation();
 
@@ -217,29 +218,30 @@ function toggleLayerButton(e) {
 
     if (visibility === 'visible') {
         map.setLayoutProperty(hash, 'visibility', 'none');
-        this.className = '';
+        checkbox.checked = '';
     } else {
-        this.className = 'active';
+        checkbox.checked = 'active';
         map.setLayoutProperty(hash, 'visibility', 'visible');
     }
 }
 
 function toggleAllLayers(e) {
-    let status = this.className
+    let status = this.data
     e.preventDefault();
     e.stopPropagation();
     for (let i in sources) {
         let hash = sources[i].hash;
-        let button = document.getElementById(hash);
+        let checkbox = document.getElementById(hash);
 
 
-        if (status == 'active') {
+        if (status == 'all') {
+            this.data = 'none';
+            checkbox.checked = '';
             map.setLayoutProperty(hash, 'visibility', 'none');
-            this.className = '';
-            button.className = '';
+            
         } else {
-            this.className = 'active';
-            button.className = 'active';
+            this.data = 'all';
+            checkbox.checked = 'checked';
             map.setLayoutProperty(hash, 'visibility', 'visible');
         }
     }
@@ -248,4 +250,10 @@ function toggleAllLayers(e) {
 document.addEventListener('DOMContentLoaded', function () {
     M.Sidenav.init(document.querySelector('#layers'), {edge:'right'});
     M.Sidenav.init(document.querySelector('#menu'));
+
+    let detailsClose = document.querySelector("#detailsClose");
+    detailsClose.addEventListener('click', () => {
+        document.querySelector('#details').innerHTML = 'Kliknij na mapę aby wyświelić więcej informacji';
+        detailsClose.style.visibility = 'hidden';
+    });
 });

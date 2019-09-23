@@ -1,8 +1,9 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const path = require('path');
 
 module.exports = {
-    entry: './src/app.js',
+    entry: ['./src/app.js', './src/style.scss'],
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js'
@@ -13,6 +14,9 @@ module.exports = {
         port: 9000
     },
     plugins: [
+        new MiniCssExtractPlugin({
+            filename: 'style.css'
+        }),
         new HtmlWebpackPlugin({
             hash: true,
             title: 'Nadajniki',
@@ -25,7 +29,7 @@ module.exports = {
             {
                 test: /\.s[ac]ss$/i,
                 use: [
-                    'style-loader',
+                    MiniCssExtractPlugin.loader,
                     'css-loader',
                     'sass-loader',
                 ],

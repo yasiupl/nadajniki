@@ -38,7 +38,7 @@ function parseToJSON(sheets, json) {
             if (j == 0) continue
             row = sheet.cells[j];
 
-            let propertiesSlugs = ['id', 'date', 'name', 'stationType', 'networkType', 'lat', 'lon', 'radius', 'location', 'erp', 'azimuth', 'elevation', 'polarization', 'gain', 'antennaHeight', 'groundHeight', 'horizontalCharacteristic', 'verticalCharacteristic', 'tx', 'rx', 'txSpan', 'rxSpan', 'op', 'opAdress'];
+            let propertiesSlugs = ['id', 'date', 'name', 'stationType', 'networkType', 'lon', 'lat', 'radius', 'location', 'erp', 'azimuth', 'elevation', 'polarization', 'gain', 'antennaHeight', 'groundHeight', 'horizontalCharacteristic', 'verticalCharacteristic', 'tx', 'rx', 'txSpan', 'rxSpan', 'op', 'opAdress'];
             let op = row[22].toLowerCase();
             let tower = (row[5] + row[6]).split(/N|S|W|E|'|"/).join('');
             //agregate points in the same place, owned by the same company
@@ -192,13 +192,15 @@ function parseToGeoJSON(data) {
         //Mapbox spłaszcza parametry, i nie możemy działać na tablicach :/
         properties.mapRadius = parseInt(Array.isArray(row.radius) ? row.radius[0] : row.radius);
         properties.mapERP = parseInt(Array.isArray(row.erp) ? row.erp[0] : row.erp);
+        properties.mapLat = parseLatLon(properties.lat);
+        properties.mapLon = parseLatLon(properties.lon);
 
         geojson.features.push({
             "type": "Feature",
             "properties": properties,
             "geometry": {
                 "type": "Point",
-                "coordinates": [parseLatLon(properties.lat), parseLatLon(properties.lon)]
+                "coordinates": [parseLatLon(properties.lon), parseLatLon(properties.lat)]
             }
         });
 

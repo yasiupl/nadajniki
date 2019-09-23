@@ -7,7 +7,7 @@ serve:
 	node_modules/.bin/webpack-dev-server
 
 build-data:
-	mkdir -p ./dist/data
+	mkdir -p ./dist/data/points
 	node parse_data.js
 
 build:

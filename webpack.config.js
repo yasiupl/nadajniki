@@ -19,7 +19,7 @@ module.exports = {
         }),
         new HtmlWebpackPlugin({
             hash: true,
-            title: 'Nadajniki',
+            title: 'Mapa nadajników radiowych',
             template: './src/index.html',
             filename: './index.html'
         })

@@ -38,7 +38,7 @@ function parseToJSON(sheets, json) {
             if (j == 0) continue
             row = sheet.cells[j];
 
-            let propertiesSlugs = ['id', 'date', 'name', 'stationType', 'networkType', 'lon', 'lat', 'radius', 'location', 'erp', 'azimuth', 'elevation', 'polarization', 'gain', 'antennaHeight', 'groundHeight', 'horizontalCharacteristic', 'verticalCharacteristic', 'tx', 'rx', 'txSpan', 'rxSpan', 'op', 'opAdress'];
+            let propertiesSlugs = ['permitID', 'permitExpiry', 'name', 'stationType', 'networkType', 'lon', 'lat', 'radius', 'location', 'erp', 'azimuth', 'elevation', 'polarization', 'gain', 'antennaHeight', 'groundHeight', 'horizontalCharacteristic', 'verticalCharacteristic', 'tx', 'rx', 'txSpan', 'rxSpan', 'op', 'opAdress'];
             let op = row[22].toLowerCase();
             let tower = (row[5] + row[6]).split(/N|S|W|E|'|"/).join('');
             //agregate points in the same place, owned by the same company
@@ -142,7 +142,7 @@ function processData(json) {
             companies++;
             masts += towers.length;
 
-            let hashedName = crypto.createHash('md5').update(i.replace(/["|'|-|_|/|\|.| ]/g, "_")).digest('hex');
+            let hashedName = crypto.createHash('md5').update(i.replace(/["|'|-|_|/|\|.|,| ]/g, "_")).digest('hex');
             sources.push({ length: towers.length, name: i, hash: hashedName });
             saveJSONToFile(parseToGeoJSON(towers), './dist/data/', hashedName + '.geojson');
         }
@@ -150,7 +150,7 @@ function processData(json) {
 
     for (let k in customList) {
         let list = customList[k];
-        let filename = list.name.toLowerCase().replace(" ", "_");
+        let filename = list.name.toLowerCase().replace(/["|'|-|_|/|\|.|,| ]/g, "_").replace("__", "_");
         console.log(list.name + ': ' + list.data.length);
         sources.push({ length: list.data.length, name: list.name, hash: filename });
         saveJSONToFile(parseToGeoJSON(list.data), './dist/data/', filename + '.geojson');
@@ -180,31 +180,38 @@ function parseToGeoJSON(data) {
     }
 
     for (let i in data) {
-        let row = data[i]
+        let point = data[i];
 
-        let properties = {}
+        let mapProperties = {
+            id: crypto.createHash('md5').update(point.name + point.lat + point.lon).digest('hex'),
+            name: point.name[0],
+            op: point.op[0],
+            tx: point.tx.join(', '),
+            networkType: point.networkType[0],
+            mapRadius: point.radius[0],
+            mapERP: point.erp[0],
+            mapLat: parseLatLon(point.lat[0]),
+            mapLon: parseLatLon(point.lon[0]),
+        };
 
-        for (let j in row) {
-            properties[j] = row[j].join(', ');
-        }
-
-
-        //Mapbox spłaszcza parametry, i nie możemy działać na tablicach :/
-        properties.mapRadius = parseInt(Array.isArray(row.radius) ? row.radius[0] : row.radius);
-        properties.mapERP = parseInt(Array.isArray(row.erp) ? row.erp[0] : row.erp);
-        properties.mapLat = parseLatLon(properties.lat);
-        properties.mapLon = parseLatLon(properties.lon);
-
+        
         geojson.features.push({
-            "type": "Feature",
-            "properties": properties,
-            "geometry": {
-                "type": "Point",
-                "coordinates": [parseLatLon(properties.lon), parseLatLon(properties.lat)]
+            type: "Feature",
+            properties: mapProperties,
+            geometry: {
+                type: "Point",
+                coordinates: [parseLatLon(point.lon[0]), parseLatLon(point.lat[0])]
             }
         });
 
+
+        point.id = mapProperties.id
+        point.mapLat = mapProperties.mapLat
+        point.mapLon = mapProperties.mapLon
+
+        saveJSONToFile(point, './dist/data/points/', mapProperties.id + '.json');
     }
+
     return geojson
 }
 

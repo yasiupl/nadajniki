@@ -100,11 +100,9 @@ function addLayerFromHash(map, hash) {
                 '#11b4da'
             ],
             "circle-radius": [
-                '+',
-                ['/',
-                    ['number', ['get', 'mapRadius'], 1],
-                    10],
-                5
+                'interpolate', ['linear'], ['zoom'],
+                7, ['+', ['/',['number', ['get', 'mapRadius'], 1],100], 2],
+                12, ['+',['/',['number', ['get', 'mapRadius'], 1],1000],10]
             ],
             "circle-stroke-width": 1,
             "circle-opacity": 0.8,
@@ -124,13 +122,13 @@ function addLayerFromHash(map, hash) {
     map.on('click', hash, function (e) {
         let coordinates = e.features[0].geometry.coordinates.slice();
         let description = ''
-
+        let properties = e.features[0].properties;
         for (let i in headers) {
             if (i == 'networkType') {
-                description += '<b>' + headers[i] + ':</b> ' + e.features[0].properties[i] + ': ' + types[e.features[0].properties[i]] + '</br>';
+                description += '<b>' + headers[i] + ':</b> ' + properties[i] + ': ' + types[properties[i].split(',')[0]] + '</br>';
                 continue
             }
-            description += '<b>' + headers[i] + ':</b> ' + e.features[0].properties[i] + '</br>';
+            description += '<b>' + headers[i] + ':</b> ' + properties[i] + '</br>';
         }
 
         // Ensure that if the map is zoomed out such that multiple
@@ -143,12 +141,18 @@ function addLayerFromHash(map, hash) {
         document.querySelector("#detailsClose").style.visibility = '';
         document.querySelector('#details').innerHTML = description;
 
-        /*
+        map.flyTo({
+            center: e.features[0].geometry.coordinates,
+            offset: [(screen.width > 992) ? screen.width / 10 : 0, (screen.width < 992) ? -1 * screen.height / 4 : 0],
+            speed: 0.8,
+        });
+
+
         new mapboxgl.Popup()
             .setLngLat(coordinates)
-            .setHTML(description)
+            .setHTML('<center>' + properties.op.slice(0, 30) + '...</br><b>' + properties.tx + '</b></center>')
             .addTo(map);
-        */
+
     });
 
     // Change the cursor to a pointer when the mouse is over the places layer.
@@ -201,7 +205,7 @@ map.on('load', function () {
 
         let link = document.createElement('li');
         link.data = sources[i].hash;
-        link.innerHTML = '<a class="truncate"><label><input type="checkbox" id="'+sources[i].hash+'" checked="checked"/><span></span></label><span class="badge">' + sources[i].length + '</span>' + sources[i].name + '</a>';
+        link.innerHTML = '<a class="truncate"><label><input type="checkbox" id="' + sources[i].hash + '" checked="checked"/><span></span></label><span class="badge">' + sources[i].length + '</span>' + sources[i].name + '</a>';
         link.onclick = toggleLayerButton;
         layers.appendChild(link);
     }
@@ -238,7 +242,7 @@ function toggleAllLayers(e) {
             this.data = 'none';
             checkbox.checked = '';
             map.setLayoutProperty(hash, 'visibility', 'none');
-            
+
         } else {
             this.data = 'all';
             checkbox.checked = 'checked';
@@ -248,7 +252,7 @@ function toggleAllLayers(e) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    M.Sidenav.init(document.querySelector('#layers'), {edge:'right'});
+    M.Sidenav.init(document.querySelector('#layers'), { edge: 'right' });
     M.Sidenav.init(document.querySelector('#menu'));
 
     let detailsClose = document.querySelector("#detailsClose");

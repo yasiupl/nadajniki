@@ -172,7 +172,7 @@ function addLayerFromHash(map, hash) {
 
     // When a click event occurs on a feature in the places layer, open a popup at the
     // location of the feature, with description HTML from its properties.
-    map.on('click', hash, (e) => { loadDetails(e.features[0].properties.id); });
+    map.on('click', hash, (e) => { loadDetails(e.features[0].layer.id, e.features[0].properties.id); });
 
     // Change the cursor to a pointer when the mouse is over the places layer.
     map.on('mouseenter', hash, function () {
@@ -186,15 +186,16 @@ function addLayerFromHash(map, hash) {
     //}
 }
 
-async function loadProperties(id) {
-    const response = await fetch('./data/points/' + id + '.json');
+async function loadProperties(collection) {
+    const response = await fetch('./data/details/' + collection + '.json');
     const data = await response.json();
     return data;
 }
 
-window.loadDetails = async function(id, mapInstance=map) {
+window.loadDetails = async function (layer, id, mapInstance = map) {
     let description = ''
-    const properties = await loadProperties(id);
+    const collection = await loadProperties(layer);
+    const properties = collection[id];
     const coordinates = [properties.mapLon, properties.mapLat];
 
     for (let i in headers) {
@@ -202,7 +203,7 @@ window.loadDetails = async function(id, mapInstance=map) {
             description += '<b>' + headers[i] + ':</b> ' + properties[i] + ': ' + types[properties[i][0]] + '</br>';
             continue
         }
-        description += '<b>' + headers[i] + ':</b> ' + properties[i].join(', ')+ '</br>';
+        description += '<b>' + headers[i] + ':</b> ' + properties[i].join(', ') + '</br>';
     }
 
     details.data = 'details'
@@ -232,14 +233,16 @@ window.loadDetails = async function(id, mapInstance=map) {
         .setHTML('<center>' + properties.op.slice(0, 30) + '...</br><b>' + properties.tx + '</b></center>')
         .addTo(mapInstance);
 
-    (window.popups = window.popups|| []).push(popup)
+    (window.popups = window.popups || []).push(popup)
 }
 
 function detailsLoadInView() {
 
     let zoomTreshold = 12;
     let features = map.queryRenderedFeatures();
-    
+
+
+
     if (details.data != 'details' && map.getZoom() > zoomTreshold) {
         details.innerHTML = '';
         details.data = 'collection'
@@ -249,12 +252,11 @@ function detailsLoadInView() {
 
         let bounds = map.getBounds();
 
-
         for (let i in features) {
             let feature = features[i];
             if (feature.properties.mapLat < bounds._ne.lat && feature.properties.mapLat > bounds._sw.lat && feature.properties.mapLon < bounds._ne.lng && feature.properties.mapLon > bounds._sw.lng) {
 
-                list.innerHTML += '<li class="collection-item truncate" onclick="loadDetails(\''+feature.properties.id+'\')">' + feature.properties.op + ' <span class="badge">'+((feature.properties.tx.match(','))? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.tx)+'</span></li>';
+                list.innerHTML += '<li class="collection-item truncate" onclick="loadDetails(\'' + feature.layer.id + '\',\'' + feature.properties.id + '\')">' + feature.properties.op + ' <span class="badge">' + ((feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.tx) + '</span></li>';
             }
         }
     }
@@ -303,7 +305,7 @@ function toggleAllLayers(e) {
 }
 
 function clearPopUps() {
-    for(let i in window.popups) {
+    for (let i in window.popups) {
         window.popups[i].remove();
     }
 }

@@ -144,7 +144,7 @@ function processData(json) {
 
             let hashedName = crypto.createHash('md5').update(i.replace(/["|'|-|_|/|\|.|,| ]/g, "_")).digest('hex');
             sources.push({ length: towers.length, name: i, hash: hashedName });
-            saveJSONToFile(parseToGeoJSON(towers), './dist/data/', hashedName + '.geojson');
+            parseGeoJSON(hashedName, towers);
         }
     }
 
@@ -153,7 +153,7 @@ function processData(json) {
         let filename = list.name.toLowerCase().replace(/["|'|-|_|/|\|.|,| ]/g, "_").replace("__", "_");
         console.log(list.name + ': ' + list.data.length);
         sources.push({ length: list.data.length, name: list.name, hash: filename });
-        saveJSONToFile(parseToGeoJSON(list.data), './dist/data/', filename + '.geojson');
+        parseGeoJSON(filename, list.data);
     }
 
     console.log('\nFirm: ' + Object.keys(json).length)
@@ -168,16 +168,19 @@ function processData(json) {
     sources.sort((a, b) => (a.length < b.length) ? 1 : -1);
     saveJSONToFile(sources, './src/', 'sources.json');
 
-    saveJSONToFile(parseToGeoJSON(singles), './dist/data/', 'singles.geojson');
-    saveJSONToFile(parseToGeoJSON(small), './dist/data/', 'small.geojson');
+    parseGeoJSON('singles', singles);
+    parseGeoJSON('small', small);
 }
 
-function parseToGeoJSON(data) {
+function parseGeoJSON(collection, data) {
 
     let geojson = {
-        "type": "FeatureCollection",
-        "features": []
+        type: "FeatureCollection",
+        name: collection,
+        features: []
     }
+
+    let json = {};
 
     for (let i in data) {
         let point = data[i];
@@ -204,15 +207,15 @@ function parseToGeoJSON(data) {
             }
         });
 
-
         point.id = mapProperties.id
         point.mapLat = mapProperties.mapLat
         point.mapLon = mapProperties.mapLon
 
-        saveJSONToFile(point, './dist/data/points/', mapProperties.id + '.json');
+        json[point.id] = point;   
     }
 
-    return geojson
+    saveJSONToFile(json, './dist/data/details/', collection + '.json');
+    saveJSONToFile(geojson, './dist/data/', collection + '.geojson');
 }
 
 function saveJSONToFile(data, path, name) {

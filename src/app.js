@@ -33,18 +33,17 @@ const headers = {
 }
 
 const types = {
-    A: "Dyspozytorska",
-    B: "Przywoławcza",
-    C: "Transmisja danych",
-    D: "Retransmisja",
-    E: "Zdalne sterowanie",
-    F: "Powiadamiania o alarmach",
-    P: "Bezprzewodowe poszukiwanie osób",
-    Q: "Mikrofony bezprzewodowe",
-    R: "Reportażowa",
-    T: "Trunkingowa"
+    A: ["Dyspozytorska", "#03a8a0"],
+    B: ["Przywoławcza", "#039c4b"],
+    C: ["Transmisja danych", "#66d313"],
+    D: ["Retransmisja", "#fedf17"],
+    E: ["Zdalne sterowanie", "#ff0984"],
+    F: ["Powiadamiania o alarmach", "#21409a"],
+    P: ["Bezprzewodowe poszukiwanie osób", "#04adff"],
+    Q: ["Mikrofony bezprzewodowe", "#e48873"],
+    R: ["Reportażowa", "#f16623"],
+    T: ["Trunkingowa", "#f44546"]
 }
-
 
 /* 
 const headers = [
@@ -109,7 +108,7 @@ map.on('load', function () {
 
         let link = document.createElement('li');
         link.data = sources[i].hash;
-        link.innerHTML = '<a class="truncate"><label><input type="checkbox" id="' + sources[i].hash + '" checked="checked"/><span></span></label><span class="badge">' + sources[i].length + '</span>' + sources[i].name + '</a>';
+        link.innerHTML = `<a class="truncate"><label><input type="checkbox" id="${sources[i].hash}" checked="checked"/><span></span></label><span class="badge">${sources[i].length}</span>${sources[i].name}</a>`;
         link.onclick = toggleLayerButton;
         layers.appendChild(link);
     }
@@ -121,6 +120,8 @@ map.on('moveend', detailsLoadInView);
 
 document.addEventListener('DOMContentLoaded', function () {
     const details = document.querySelector('#details');
+
+    detailsLegend();
 
     M.Sidenav.init(document.querySelector('#layers'), { edge: 'right' });
     M.Sidenav.init(document.querySelector('#menu'));
@@ -140,16 +141,16 @@ function addLayerFromHash(map, hash) {
             "circle-color": [
                 'match',
                 ['get', 'networkType'],
-                "A", "#03a8a0",
-                "B", "#039c4b",
-                "C", "#66d313",
-                "D", "#fedf17",
-                "E", "#ff0984",
-                "F", "#21409a",
-                "P", "#04adff",
-                "Q", "#e48873",
-                "R", "#f16623",
-                "T", "#f44546",
+                "A", types["A"][1],
+                "B", types["B"][1],
+                "C", types["C"][1],
+                "D", types["D"][1],
+                "E", types["E"][1],
+                "F", types["F"][1],
+                "P", types["P"][1],
+                "Q", types["Q"][1],
+                "R", types["R"][1],
+                "T", types["T"][1],
                 '#11b4da'
             ],
             "circle-radius": [
@@ -187,7 +188,7 @@ function addLayerFromHash(map, hash) {
 }
 
 async function loadProperties(collection) {
-    const response = await fetch('./data/details/' + collection + '.json');
+    const response = await fetch(`./data/details/${collection}.json`);
     const data = await response.json();
     return data;
 }
@@ -200,20 +201,20 @@ window.loadDetails = async function (layer, id, mapInstance = map) {
 
     for (let i in headers) {
         if (i == 'networkType') {
-            description += '<b>' + headers[i] + ':</b> ' + properties[i] + ': ' + types[properties[i][0]] + '</br>';
+            description += `<b>${headers[i]}:</b> ${properties[i]}: ${types[properties[i][0]][0]}</br>`;
             continue
         }
-        description += '<b>' + headers[i] + ':</b> ' + properties[i].join(', ') + '</br>';
+        description += `<b>${headers[i]}:</b> ${properties[i].join(', ')}</br>`;
     }
 
     details.data = 'details'
-    details.innerHTML = '<i id="detailsClose" class="material-icons right">arrow_back</i>'
+    details.innerHTML = `<i id="detailsClose" class="material-icons right">arrow_back</i>`
     details.innerHTML += description;
 
     document.querySelector("#detailsClose").addEventListener('click', () => {
-        details.innerHTML = 'Kliknij na mapę lub przybliż aby wyświelić więcej informacji';
         details.data = '';
         clearPopUps();
+        detailsLegend();
         detailsLoadInView();
     });
 
@@ -230,7 +231,7 @@ window.loadDetails = async function (layer, id, mapInstance = map) {
 
     let popup = new mapboxgl.Popup()
         .setLngLat(coordinates)
-        .setHTML('<center>' + properties.op.slice(0, 30) + '...</br><b>' + properties.tx + '</b></center>')
+        .setHTML(`<center>${properties.op.slice(0, 30)}...</br><b>${properties.tx}</b></center>`)
         .addTo(mapInstance);
 
     (window.popups = window.popups || []).push(popup)
@@ -240,29 +241,114 @@ function detailsLoadInView() {
 
     let zoomTreshold = 12;
     let features = map.queryRenderedFeatures();
-
-
+    let bounds = map.getBounds();
+    //let bandplan = {};
 
     if (details.data != 'details' && map.getZoom() > zoomTreshold) {
-        details.innerHTML = '';
+        details.innerHTML = `Nadajniki w widoku. Oddal aby zobaczyć legendę.`;
         details.data = 'collection'
-        let list = document.createElement('ul');
-        list.className = 'collection'
-        details.appendChild(list);
 
-        let bounds = map.getBounds();
+        let element = document.createElement('ul');
+        element.className = 'collection'
+        details.appendChild(element);
+
 
         for (let i in features) {
             let feature = features[i];
             if (feature.properties.mapLat < bounds._ne.lat && feature.properties.mapLat > bounds._sw.lat && feature.properties.mapLon < bounds._ne.lng && feature.properties.mapLon > bounds._sw.lng) {
+               /* 
+               // Bandplan w danym widoku
+               let frequencies = feature.properties.tx.split(", ");
+                for (let j in frequencies) {
+                    let frequency = frequencies[j];
+                    bandplan[frequency] = bandplan[frequency] || {};
+                    bandplan[frequency].op = feature.properties.op;
+                    (bandplan[frequency].stations = bandplan[frequency].stations || []).push(feature.properties.name);
 
-                list.innerHTML += '<li class="collection-item truncate" onclick="loadDetails(\'' + feature.layer.id + '\',\'' + feature.properties.id + '\')">' + feature.properties.op + ' <span class="badge">' + ((feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.tx) + '</span></li>';
+                }*/
+            element.innerHTML += `<li class="collection-item truncate" onclick="loadDetails('${feature.layer.id}','${feature.properties.id}')">${feature.properties.op }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.networkType][1]}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.tx}</span></li>`;
             }
         }
+        //console.log(bandplan);
     }
-    if (details.data == 'collection' && map.getZoom() < zoomTreshold) { details.innerHTML = 'Kliknij na mapę lub przybliż aby wyświelić więcej informacji' }
+    if (details.data != 'details' && map.getZoom() < zoomTreshold) detailsLegend();
 }
 
+function detailsLegend() {
+    details.innerHTML = `Kliknij na mapę lub przybliż aby wyświelić więcej informacji.
+    <ul class="collection">
+    <li class="collection-item avatar">
+      <div style="background-color: #03a8a0" class="circle"></div>
+      <span class="title">Typ A</span>
+      <p>
+        Stacja nadawcza Dyspozytorska.
+      </p>
+    </li>
+    <li class="collection-item avatar">
+      <div style="background-color: #039c4b" class="circle"></div>
+      <span class="title">Typ B</span>
+      <p>
+        Stacja nadawcza Przywoławcza.
+      </p>
+    </li>
+    <li class="collection-item avatar">
+      <div style="background-color: #66d313" class="circle"></div>
+      <span class="title">Typ C</span>
+      <p>
+        Stacja transmisji danych.
+      </p>
+    </li>
+    <li class="collection-item avatar">
+      <div style="background-color: #fedf17" class="circle"></div>
+      <span class="title">Typ D</span>
+      <p>
+        Stacja retransmisyjna / przemiennik.
+      </p>
+    </li>
+    <li class="collection-item avatar">
+      <div style="background-color: #ff0984" class="circle"></div>
+      <span class="title">Typ E</span>
+      <p>
+        Stacja zdalnego sterowania.
+      </p>
+    </li>
+    <li class="collection-item avatar">
+      <div style="background-color: #21409a" class="circle"></div>
+      <span class="title">Typ F</span>
+      <p>
+        Stacja powiadomianiania o alarmach.
+      </p>
+    </li>
+    <li class="collection-item avatar">
+      <div style="background-color: #04adff" class="circle"></div>
+      <span class="title">Typ P</span>
+      <p>
+        Stacja bezprzewodowego poszukiwania osób.
+      </p>
+    </li>
+    <li class="collection-item avatar">
+      <div style="background-color: #e48873" class="circle"></div>
+      <span class="title">Typ Q</span>
+      <p>
+        Mikrofony bezprzewodowe.
+      </p>
+    </li>
+    <li class="collection-item avatar">
+      <div style="background-color: #f16623" class="circle"></div>
+      <span class="title">Typ R</span>
+      <p>
+        Stacja Reportażowa.
+      </p>
+    </li>
+    <li class="collection-item avatar">
+      <div style="background-color: #f44546" class="circle"></div>
+      <span class="title">Typ T</span>
+      <p>
+        Stacja Trunkingowa.
+      </p>
+    </li>
+  </ul>`
+}
 
 function toggleLayerButton(e) {
 

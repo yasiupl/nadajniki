@@ -1,29 +1,29 @@
-@import '~mapbox-gl/dist/mapbox-gl.css';
-@import '~materialize-css/sass/materialize.scss';
+@import "~mapbox-gl/dist/mapbox-gl.css";
+@import "~materialize-css/sass/materialize.scss";
 
-  html,
-  body {
-    display: flex;
-    flex-flow: column;
-    height: 100%;
-  }
+html,
+body {
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+}
 
-  nav {
-    @extend .blue;
-  }
+nav {
+  @extend .blue;
+}
 
-  main {
-    height:100%;
-  }
+main {
+  height: 100%;
+}
 
-  #map {
-    flex: 0 1 auto;
-    //position: absolute;
-    height:100%;
-    width:100%;
-  }
+#map {
+  flex: 0 1 auto;
+  //position: absolute;
+  height: 100%;
+  width: 100%;
+}
 
-  #details {
+#details {
   position: absolute;
   top: 72px;
   left: 1vw;
@@ -33,11 +33,15 @@
   //@extend .hide-on-med-and-down;
   @extend .card-panel;
 
-    @media #{$medium-and-down} {
-      top: unset;
-      bottom: 0px;
-      width: 98%;
-      left: 1%;
-      max-height: 50vh;
-    }
+  @media #{$medium-and-down} {
+    top: unset;
+    bottom: 0px;
+    width: 98%;
+    left: 1%;
+    max-height: 50vh;
   }
+
+  .collection-item {
+    min-height: unset;
+  }
+}

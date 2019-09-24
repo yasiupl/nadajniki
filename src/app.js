@@ -5,6 +5,8 @@ import './style.scss'
 
 mapboxgl.accessToken = 'pk.eyJ1IjoieWFzaXUiLCJhIjoiY2o4dWF2dmZnMHEwODMzcnB6NmZ5cGpicCJ9.XzC5pC59qPSmqbLv2xBDQw';
 
+const layers = sources.layers;
+
 const headers = {
     permitID: 'Nr pozwolenia',
     permitExpiry: 'Data wygaśnięcia',
@@ -94,23 +96,23 @@ map.addControl(new mapboxgl.NavigationControl());
 
 
 map.on('load', function () {
-    let layers = document.getElementById('layers');
+    let layersList = document.getElementById('layers');
 
     let toggleAll = document.createElement('li');
     toggleAll.data = 'all';
     toggleAll.innerHTML = '<a>Przełącz Wszystkie</a>';
     toggleAll.onclick = toggleAllLayers;
-    layers.appendChild(toggleAll);
+    layersList.appendChild(toggleAll);
 
-    for (let i in sources) {
+    for (let i in layers) {
         // Add a layer showing the places.
-        addLayerFromHash(map, sources[i].hash);
+        addLayerFromHash(map, layers[i].hash);
 
         let link = document.createElement('li');
-        link.data = sources[i].hash;
-        link.innerHTML = `<a class="truncate"><label><input type="checkbox" id="${sources[i].hash}" checked="checked"/><span></span></label><span class="badge">${sources[i].length}</span>${sources[i].name}</a>`;
+        link.data = layers[i].hash;
+        link.innerHTML = `<a class="truncate"><label><input type="checkbox" id="${layers[i].hash}" checked="checked"/><span></span></label><span class="badge">${layers[i].length}</span>${layers[i].name}</a>`;
         link.onclick = toggleLayerButton;
-        layers.appendChild(link);
+        layersList.appendChild(link);
     }
 });
 
@@ -135,7 +137,7 @@ function addLayerFromHash(map, hash) {
         type: "circle",
         source: {
             type: "geojson",
-            data: './data/' + hash + '.geojson'
+            data: `./data/${hash}.geojson?t=${sources.generated}`
         },
         paint: {
             "circle-color": [
@@ -188,7 +190,7 @@ function addLayerFromHash(map, hash) {
 }
 
 async function loadProperties(collection) {
-    const response = await fetch(`./data/details/${collection}.json`);
+    const response = await fetch(`./data/details/${collection}.json?t=${sources.generated}`);
     const data = await response.json();
     return data;
 }
@@ -266,7 +268,7 @@ function detailsLoadInView() {
                     (bandplan[frequency].stations = bandplan[frequency].stations || []).push(feature.properties.name);
 
                 }*/
-            element.innerHTML += `<li class="collection-item truncate" onclick="loadDetails('${feature.layer.id}','${feature.properties.id}')">${feature.properties.op }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.networkType][1]}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.tx}</span></li>`;
+            element.innerHTML += `<li class="collection-item truncate" onclick="loadDetails('${feature.layer.id}','${feature.properties.id}')">${feature.properties.op }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.networkType.split(',')[0]][1]}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.tx}</span></li>`;
             }
         }
         //console.log(bandplan);
@@ -372,8 +374,8 @@ function toggleAllLayers(e) {
     let status = this.data
     e.preventDefault();
     e.stopPropagation();
-    for (let i in sources) {
-        let hash = sources[i].hash;
+    for (let i in layers) {
+        let hash = layers[i].hash;
         let checkbox = document.getElementById(hash);
 
 
@@ -394,4 +396,10 @@ function clearPopUps() {
     for (let i in window.popups) {
         window.popups[i].remove();
     }
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js');
+  });
 }

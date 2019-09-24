@@ -66,7 +66,9 @@ function processData(json) {
     let countAll = 0;
     let companies = 0;
     let masts = 0;
-
+    let geojson = {};
+    let sources = {};
+    sources.layers = []
     let singles = [];
     let small = [];
 
@@ -109,9 +111,6 @@ function processData(json) {
         { name: "Spółka Akcyjna.", match: /\bs.a|\bspółka akcyjna|\bs. a.|\b sa/, data: [] }*/
     ];
 
-    let sources = [];
-    let geojson = {};
-
     for (let i in json) {
         let company = json[i];
         let towers = [];
@@ -143,7 +142,7 @@ function processData(json) {
             masts += towers.length;
 
             let hashedName = crypto.createHash('md5').update(i.replace(/["|'|-|_|/|\|.|,| ]/g, "_")).digest('hex');
-            sources.push({ length: towers.length, name: i, hash: hashedName });
+            sources.layers.push({ length: towers.length, name: i, hash: hashedName });
             parseGeoJSON(hashedName, towers);
         }
     }
@@ -152,7 +151,7 @@ function processData(json) {
         let list = customList[k];
         let filename = list.name.toLowerCase().replace(/["|'|-|_|/|\|.|,| ]/g, "_").replace("__", "_");
         console.log(list.name + ': ' + list.data.length);
-        sources.push({ length: list.data.length, name: list.name, hash: filename });
+        sources.layers.push({ length: list.data.length, name: list.name, hash: filename });
         parseGeoJSON(filename, list.data);
     }
 
@@ -163,9 +162,10 @@ function processData(json) {
     console.log('Pojedyńcze nadajniki: ' + singles.length);
     console.log('Unikalnych punktów: ' + countAll);
 
-    sources.push({ length: singles.length, name: 'Pojedyńcze', hash: 'singles' });
-    sources.push({ length: small.length, name: 'Małe sieci', hash: 'small' });
-    sources.sort((a, b) => (a.length < b.length) ? 1 : -1);
+    sources.layers.push({ length: singles.length, name: 'Pojedyńcze', hash: 'singles' });
+    sources.layers.push({ length: small.length, name: 'Małe sieci', hash: 'small' });
+    sources.layers.sort((a, b) => (a.length < b.length) ? 1 : -1);
+    sources.generated = Date.now();
     saveJSONToFile(sources, './src/', 'sources.json');
 
     parseGeoJSON('singles', singles);

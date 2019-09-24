@@ -7,6 +7,7 @@ serve:
 	node_modules/.bin/webpack-dev-server
 
 build-data:
+	rm -rf ./dist/data
 	mkdir -p ./dist/data/details
 	node parse_data.js
 

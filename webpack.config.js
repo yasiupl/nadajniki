@@ -1,5 +1,7 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const WebpackPwaManifest = require('webpack-pwa-manifest');
+const WorkboxPlugin = require('workbox-webpack-plugin');
 const path = require('path');
 
 module.exports = {
@@ -22,7 +24,39 @@ module.exports = {
             title: 'Mapa nadajników radiowych',
             template: './src/index.html',
             filename: './index.html'
-        })
+        }),
+        new WebpackPwaManifest({
+            name: 'Mapa Nadajników',
+            short_name: 'Nadajniki',
+            description: 'Mapa pozwoleń radiowych RRL UKE.',
+            background_color: '#ffffff',
+            theme_color: '#2196F3',
+            start_url: '/?utm_source=a2hs',
+            display: 'standalone',
+            ios: {
+                'apple-mobile-web-app-status-bar-style': 'white'
+            },
+            icons: [
+              {
+                src: path.resolve('src/assets/icon.png'),
+                destination: './icons/',
+                sizes: [96, 128, 192, 256, 384, 512],
+                ios: true
+              },
+              {
+                src: path.resolve('src/assets/icon.png'),
+                destination: './icons/',
+                size: 512,
+                ios: 'startup'
+              }
+            ]
+          }),
+          new WorkboxPlugin.GenerateSW({
+            runtimeCaching: [{
+                urlPattern: /.*/,
+                handler: 'NetworkFirst',}]
+            
+          })
     ],
     module: {
         rules: [

@@ -3,15 +3,16 @@ import mapboxgl from 'mapbox-gl'
 import sources from './sources.json'
 import './style.scss'
 
+mapboxgl.accessToken = 'pk.eyJ1IjoieWFzaXUiLCJhIjoiY2o4dWF2dmZnMHEwODMzcnB6NmZ5cGpicCJ9.XzC5pC59qPSmqbLv2xBDQw';
 
 const headers = {
-    id: 'Nr pozwolenia',
-    date: 'Data wygaśnięcia',
+    permitID: 'Nr pozwolenia',
+    permitExpiry: 'Data wygaśnięcia',
     name: 'Nazwa stacji',
     stationType: 'Rodzaj stacji',
     networkType: 'Rodzaj sieci',
-    lat: 'Długość geograficzna',
-    lon: 'Szerokość geograficzna',
+    lon: 'Długość geograficzna',
+    lat: 'Szerokość geograficzna',
     radius: 'Promień obszaru obsługi',
     location: 'Lokalizacja stacji',
     erp: 'Maksymalna zastępcza moc promieniowania [dBW]',
@@ -44,6 +45,7 @@ const types = {
     T: "Trunkingowa"
 }
 
+
 /* 
 const headers = [
     'Nr pozwolenia',
@@ -73,6 +75,57 @@ const headers = [
 ]
 */
 
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v10',
+    hash: true,
+    center: [19.134422, 51.919231],
+    zoom: 6
+});
+
+// Add geolocate control to the map.
+map.addControl(new mapboxgl.GeolocateControl({
+    positionOptions: {
+        enableHighAccuracy: true
+    },
+    trackUserLocation: true
+}));
+
+map.addControl(new mapboxgl.NavigationControl());
+
+
+map.on('load', function () {
+    let layers = document.getElementById('layers');
+
+    let toggleAll = document.createElement('li');
+    toggleAll.data = 'all';
+    toggleAll.innerHTML = '<a>Przełącz Wszystkie</a>';
+    toggleAll.onclick = toggleAllLayers;
+    layers.appendChild(toggleAll);
+
+    for (let i in sources) {
+        // Add a layer showing the places.
+        addLayerFromHash(map, sources[i].hash);
+
+        let link = document.createElement('li');
+        link.data = sources[i].hash;
+        link.innerHTML = '<a class="truncate"><label><input type="checkbox" id="' + sources[i].hash + '" checked="checked"/><span></span></label><span class="badge">' + sources[i].length + '</span>' + sources[i].name + '</a>';
+        link.onclick = toggleLayerButton;
+        layers.appendChild(link);
+    }
+});
+
+map.on('idle', detailsLoadInView);
+
+map.on('moveend', detailsLoadInView);
+
+document.addEventListener('DOMContentLoaded', function () {
+    const details = document.querySelector('#details');
+
+    M.Sidenav.init(document.querySelector('#layers'), { edge: 'right' });
+    M.Sidenav.init(document.querySelector('#menu'));
+});
+
 function addLayerFromHash(map, hash) {
 
     //if (typeof map.getLayer(hash) !== 'undefined') {
@@ -101,8 +154,8 @@ function addLayerFromHash(map, hash) {
             ],
             "circle-radius": [
                 'interpolate', ['linear'], ['zoom'],
-                7, ['+', ['/',['number', ['get', 'mapRadius'], 1],100], 2],
-                12, ['+',['/',['number', ['get', 'mapRadius'], 1],1000],10]
+                7, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 100], 2],
+                12, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 1000], 10]
             ],
             "circle-stroke-width": 1,
             "circle-opacity": 0.8,
@@ -119,41 +172,7 @@ function addLayerFromHash(map, hash) {
 
     // When a click event occurs on a feature in the places layer, open a popup at the
     // location of the feature, with description HTML from its properties.
-    map.on('click', hash, function (e) {
-        let coordinates = e.features[0].geometry.coordinates.slice();
-        let description = ''
-        let properties = e.features[0].properties;
-        for (let i in headers) {
-            if (i == 'networkType') {
-                description += '<b>' + headers[i] + ':</b> ' + properties[i] + ': ' + types[properties[i].split(',')[0]] + '</br>';
-                continue
-            }
-            description += '<b>' + headers[i] + ':</b> ' + properties[i] + '</br>';
-        }
-
-        // Ensure that if the map is zoomed out such that multiple
-        // copies of the feature are visible, the popup appears
-        // over the copy being pointed to.
-        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-            coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-        }
-
-        document.querySelector("#detailsClose").style.visibility = '';
-        document.querySelector('#details').innerHTML = description;
-
-        map.flyTo({
-            center: e.features[0].geometry.coordinates,
-            offset: [(screen.width > 992) ? screen.width / 10 : 0, (screen.width < 992) ? -1 * screen.height / 4 : 0],
-            speed: 0.8,
-        });
-
-
-        new mapboxgl.Popup()
-            .setLngLat(coordinates)
-            .setHTML('<center>' + properties.op.slice(0, 30) + '...</br><b>' + properties.tx + '</b></center>')
-            .addTo(map);
-
-    });
+    map.on('click', hash, (e) => { loadDetails(e.features[0].layer.id, e.features[0].properties.id); });
 
     // Change the cursor to a pointer when the mouse is over the places layer.
     map.on('mouseenter', hash, function () {
@@ -167,49 +186,83 @@ function addLayerFromHash(map, hash) {
     //}
 }
 
+async function loadProperties(collection) {
+    const response = await fetch('./data/details/' + collection + '.json');
+    const data = await response.json();
+    return data;
+}
 
-mapboxgl.accessToken = 'pk.eyJ1IjoieWFzaXUiLCJhIjoiY2o4dWF2dmZnMHEwODMzcnB6NmZ5cGpicCJ9.XzC5pC59qPSmqbLv2xBDQw';
-const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/light-v10',
-    hash: true,
-    center: [19.134422, 51.919231],
-    zoom: 6
-});
+window.loadDetails = async function (layer, id, mapInstance = map) {
+    let description = ''
+    const collection = await loadProperties(layer);
+    const properties = collection[id];
+    const coordinates = [properties.mapLon, properties.mapLat];
 
-// Add geolocate control to the map.
-map.addControl(new mapboxgl.GeolocateControl({
-    positionOptions: {
-        enableHighAccuracy: true
-    },
-    trackUserLocation: true
-}));
-
-map.addControl(new mapboxgl.NavigationControl());
-
-
-map.on('load', function () {
-    //addLayerFromHash(map, 'leftovers')
-    let layers = document.getElementById('layers');
-
-    let toggleAll = document.createElement('li');
-    toggleAll.data = 'all';
-    toggleAll.innerHTML = '<a>Przełącz Wszystkie</a>';
-    toggleAll.onclick = toggleAllLayers;
-    layers.appendChild(toggleAll);
-
-    for (let i in sources) {
-        console.log(sources[i].name)
-        // Add a layer showing the places.
-        addLayerFromHash(map, sources[i].hash);
-
-        let link = document.createElement('li');
-        link.data = sources[i].hash;
-        link.innerHTML = '<a class="truncate"><label><input type="checkbox" id="' + sources[i].hash + '" checked="checked"/><span></span></label><span class="badge">' + sources[i].length + '</span>' + sources[i].name + '</a>';
-        link.onclick = toggleLayerButton;
-        layers.appendChild(link);
+    for (let i in headers) {
+        if (i == 'networkType') {
+            description += '<b>' + headers[i] + ':</b> ' + properties[i] + ': ' + types[properties[i][0]] + '</br>';
+            continue
+        }
+        description += '<b>' + headers[i] + ':</b> ' + properties[i].join(', ') + '</br>';
     }
-});
+
+    details.data = 'details'
+    details.innerHTML = '<i id="detailsClose" class="material-icons right">arrow_back</i>'
+    details.innerHTML += description;
+
+    document.querySelector("#detailsClose").addEventListener('click', () => {
+        details.innerHTML = 'Kliknij na mapę lub przybliż aby wyświelić więcej informacji';
+        details.data = '';
+        clearPopUps();
+        detailsLoadInView();
+    });
+
+    /* 
+        mapInstance.flyTo({
+        center: coordinates,
+        offset: [(window.innerWidth  > 992) ? window.innerWidth  / 10 : 0, (window.innerWidth  < 992) ? -1 * window.innerHeight  / 4 : 0],
+        speed: 0.8,
+        zoom: 14,
+        bearing: 0
+    });
+    */
+
+
+    let popup = new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML('<center>' + properties.op.slice(0, 30) + '...</br><b>' + properties.tx + '</b></center>')
+        .addTo(mapInstance);
+
+    (window.popups = window.popups || []).push(popup)
+}
+
+function detailsLoadInView() {
+
+    let zoomTreshold = 12;
+    let features = map.queryRenderedFeatures();
+
+
+
+    if (details.data != 'details' && map.getZoom() > zoomTreshold) {
+        details.innerHTML = '';
+        details.data = 'collection'
+        let list = document.createElement('ul');
+        list.className = 'collection'
+        details.appendChild(list);
+
+        let bounds = map.getBounds();
+
+        for (let i in features) {
+            let feature = features[i];
+            if (feature.properties.mapLat < bounds._ne.lat && feature.properties.mapLat > bounds._sw.lat && feature.properties.mapLon < bounds._ne.lng && feature.properties.mapLon > bounds._sw.lng) {
+
+                list.innerHTML += '<li class="collection-item truncate" onclick="loadDetails(\'' + feature.layer.id + '\',\'' + feature.properties.id + '\')">' + feature.properties.op + ' <span class="badge">' + ((feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.tx) + '</span></li>';
+            }
+        }
+    }
+    if (details.data == 'collection' && map.getZoom() < zoomTreshold) { details.innerHTML = 'Kliknij na mapę lub przybliż aby wyświelić więcej informacji' }
+}
+
 
 function toggleLayerButton(e) {
 
@@ -251,13 +304,8 @@ function toggleAllLayers(e) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    M.Sidenav.init(document.querySelector('#layers'), { edge: 'right' });
-    M.Sidenav.init(document.querySelector('#menu'));
-
-    let detailsClose = document.querySelector("#detailsClose");
-    detailsClose.addEventListener('click', () => {
-        document.querySelector('#details').innerHTML = 'Kliknij na mapę aby wyświelić więcej informacji';
-        detailsClose.style.visibility = 'hidden';
-    });
-});
+function clearPopUps() {
+    for (let i in window.popups) {
+        window.popups[i].remove();
+    }
+}

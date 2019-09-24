@@ -12,21 +12,114 @@
       <a href="#" data-target="menu" class="sidenav-trigger show-on-large"><i class="material-icons">menu</i></a>
       <a href="#!" class="brand-logo center"><%= htmlWebpackPlugin.options.title %></a>
       <a href="#" data-target="layers" class="sidenav-trigger show-on-large right"><i
-          class="material-icons">settings</i></a>
+          class="material-icons">filter_list</i></a>
     </div>
   </nav>
 
-  <ul class="sidenav" id="layers">
-    <li><a class="sidenav-close material-icons left" href="#!">close</a></li>
+  <ul id="layers" class="sidenav">
+    <li><a class="sidenav-close material-icons left" href="">close</a></li>
   </ul>
 
-  <ul class="sidenav" id="menu">
-      <li><a class="sidenav-close material-icons right" href="#!">close</a></li>
-    </ul>
+  <ul id="menu" class="sidenav">
+    <li><a class="sidenav-close material-icons right" href="">close</a></li>
+    <li>
+      <div class="user-view">
+        <div class="background deep-orange">
+        </div>
+        <a href="https://yasiu.pl"><img class="circle" src="https://yasiu.pl/host/img/meirl.jpg"></a>
+        <a href="https://yasiu.pl"><span class="white-text name">Marcin Jasiukowicz</span></a>
+        <a href="mailto:contact@yasiu.pl?subject=Nadajniki"><span class="white-text email">contact@yasiu.pl</span></a>
+      </div>
+    </li>
+    <li><a href="https://yasiu.pl"><i class="material-icons">account_circle</i>Portfolio</a></li>
+    <li><a href="https://patreon.com/yasiupl"><i class="material-icons">monetization_on</i>Wsparcie</a></li>
+    <li><a href="https://paypal.me/yasiupl"><i class="material-icons">money</i>Donacje</a></li>
+    <li><a href="https://github.com/yasiupl/nadajniki"><i class="material-icons">code</i>Kod Źródłowy</a></li>
+    <li>
+      <div class="divider"></div>
+    </li>
+    <li><a class="subheader">Projekty</a></li>
+    <li><a href="https://rocket.watch"><i class="material-icons">launch</i>rocket.watch</a></li>
+    <li><a href="#!"><i class="material-icons">launch</i>Mapa nadajników radiowych</a></li>
+  </ul>
 
   <main>
     <div id="map"></div>
-    <div class="details"><div class="card-title"><i id="detailsClose" class="material-icons right" style="visibility:hidden">close</i></div><div class="card-content" id="details">Kliknij na mapę aby wyświelić więcej informacji</div></div>
+    <div id="details">
+      Kliknij na mapę lub przybliż aby wyświelić więcej informacji
+      <ul class="collection">
+        <li class="collection-item avatar">
+          <div style="background-color: #03a8a0" class="circle"></div>
+          <span class="title">Typ A</span>
+          <p>
+            Stacja nadawcza Dyspozytorska.
+          </p>
+        </li>
+        <li class="collection-item avatar">
+          <div style="background-color: #039c4b" class="circle"></div>
+          <span class="title">Typ B</span>
+          <p>
+            Stacja nadawcza Przywoławcza.
+          </p>
+        </li>
+        <li class="collection-item avatar">
+          <div style="background-color: #66d313" class="circle"></div>
+          <span class="title">Typ C</span>
+          <p>
+            Stacja transmisji danych.
+          </p>
+        </li>
+        <li class="collection-item avatar">
+          <div style="background-color: #fedf17" class="circle"></div>
+          <span class="title">Typ D</span>
+          <p>
+            Stacja retransmisyjna / przemiennik.
+          </p>
+        </li>
+        <li class="collection-item avatar">
+          <div style="background-color: #ff0984" class="circle"></div>
+          <span class="title">Typ E</span>
+          <p>
+            Stacja zdalnego sterowania.
+          </p>
+        </li>
+        <li class="collection-item avatar">
+          <div style="background-color: #21409a" class="circle"></div>
+          <span class="title">Typ F</span>
+          <p>
+            Stacja powiadomianiania o alarmach.
+          </p>
+        </li>
+        <li class="collection-item avatar">
+          <div style="background-color: #04adff" class="circle"></div>
+          <span class="title">Typ P</span>
+          <p>
+            Stacja bezprzewodowego poszukiwania osób.
+          </p>
+        </li>
+        <li class="collection-item avatar">
+          <div style="background-color: #e48873" class="circle"></div>
+          <span class="title">Typ Q</span>
+          <p>
+            Mikrofony bezprzewodowe.
+          </p>
+        </li>
+        <li class="collection-item avatar">
+          <div style="background-color: #f16623" class="circle"></div>
+          <span class="title">Typ R</span>
+          <p>
+            Stacja Reportażowa.
+          </p>
+        </li>
+        <li class="collection-item avatar">
+          <div style="background-color: #f44546" class="circle"></div>
+          <span class="title">Typ T</span>
+          <p>
+            Stacja Trunkingowa.
+          </p>
+        </li>
+      </ul>
+    </div>
   </main>
 </body>
 

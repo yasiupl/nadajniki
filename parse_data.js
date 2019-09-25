@@ -230,7 +230,7 @@ function parseLatLon(coordinate = '') {
     let sign = 1;
     if (coordinate.match(/S|W/)) sign = -1;
     coordinate = coordinate.split(/N|S|W|E|'|"/);
-    return Number.parseFloat((parseInt(coordinate[0]) + parseInt(coordinate[1]) / 60 + parseInt(coordinate[2]) / 3600).toFixed(6)) * sign;
+    return (Number.parseFloat((parseInt(coordinate[0]) + parseInt(coordinate[1]) / 60 + parseInt(coordinate[2]) / 3600).toFixed(6)) * sign) || 0;
 }
 
 function searchAndDestroy() {

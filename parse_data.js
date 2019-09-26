@@ -1,4 +1,3 @@
-
 const danegovplAPI = 'https://api.dane.gov.pl/resources/19111';
 
 const request = require('request');
@@ -64,112 +63,233 @@ function processData(json) {
     const treshold = 100;
 
     let countAll = 0;
-    let companies = 0;
-    let masts = 0;
-    let geojson = {};
     let sources = {};
-    sources.layers = []
-    let singles = [];
-    let small = [];
+    let points = []
 
-    const customList = [
-        { name: "Szkoły Wyższe", match: /\buniwersytet|\bpolitechnik|\bakademi|\bszkoła wyższa/, data: [] },
-        { name: "Lasy Państwowe", match: /\bnadleśnictwo|\bnadlesnictwo|\blasy|\blasów/, data: [] },
-        { name: "Parki Narodowe", match: /(\bpark).*(\bnarodowy)/, data: [] },
-        { name: "Drogi", match: /\bdróg|\bdrogi|\bautostrad/, data: [] },
-        { name: "Straż Miejska", match: /(\bstraż).*(\bmiejsk)/, data: [] },
-        { name: "Straż Pożarna", match: /(\bstraż).*(\bpożar)|\bpożar/, data: [] },
-        { name: "Pogotowie Ochotnicze", match: /(\bochotnicz).*(\bpogotow)/, data: [] },
-        { name: "Pogotowie Lotnicze", match: /(\blotnicz).*(\bpogotow)/, data: [] },
-        { name: "Pogotowie Ratunkowe", match: /\bpogotowi|\bszpital|\bopieki|\bopieka|\bnfz |\b zoz |\bratownictw|\bmedycyna/, data: [] },
-        { name: "Sport", match: /\bsport|\bbieg/, data: [] },
-        { name: "Taxi, Transport, Komunikacja", match: /\bkomunikacja|\bkomunikacji|\bkomunikacyj|\btramwaj|\bautobus|\btaxi|\btaksówk|\btransport|\bprzewoźnik|\bprzewóz osób/, data: [] },
-        { name: "Kolej", match: /\bpkp|\bkolej|\brail|\b db /, data: [] },
-        { name: "Wodociagi", match: /\bwodocią|\bwoda|\bwodno|\bwodo/, data: [] },
-        { name: "Odpady", match: /\bodpad|\butyliza|\boczyszcza|\bkanaliza/, data: [] },
-        { name: "Gospodarka Wodna", match: /\bgospodarki wodnej|(\bgospodar).*(\bwod)/, data: [] },
-        { name: "Ciepłownie", match: /\bciepło|\bciepła|\bcieplne|\bcieplna/, data: [] },
-        { name: "Elektrownie", match: /\belektrow|\benergety/, data: [] },
-        { name: "Gazownictwo", match: /\bgazociąg|\bgazownictw/, data: [] },
-        { name: "Wydobystwo", match: /\bkghm|\bkopalni|\bgórnict|\bwęgiel/, data: [] },
-        { name: "Gminy", match: /\bgmina|\bgminy|\bgminna/, data: [] },
-        { name: "Powiaty", match: /\bpowiat|\bstarost/, data: [] },
-        { name: "Miasta", match: /\bmiasto|\bmiasta|\bmiejski|(\burząd).*(\bmiejsk|\bmiast)|\bprezydent|\bburmistrz/, data: [] },
-        { name: "Województwa", match: /\bwojewoda|\bwojewództwo/, data: [] },
-        { name: "Ochrona", match: /\bochrony|\bochrona|\bsecur|\bprotec|\bsolid|\bdetektyw|\b997|\bmienie|\bmienia|\binterwencj/, data: [] },
-        { name: "Lotnictwo", match: /\bairport|\blotnis|\blotnicz/, data: [] },
-        { name: "Porty", match: /\bport|\bmorski/, data: [] },
-        { name: "Kultura", match: /\bmuzeum|\bmuzea|\bteatr|\bfilharmon|\bkultur/, data: [] },
-        { name: "Banki", match: /\bbank/, data: [] },
-        { name: "Lotos", match: /\blotos/, data: [] },
-        /*{ name: "PGE", match: /\bpge/, data: [] },
-        { name: "Tauron", match: /\btauron/, data: [] },
-        { name: "Energa", match: /\benerga/, data: [] },
-        { name: "Telewizja", match: /\btvp|\btelewizja/, data: [] },
-        { name: "Działalność Osobowa", match: /\bpod nazwą|\bpod firmą|\bprowadzący/, data: [] },
-        { name: "Spółka z o.o.", match: /(\bsp.|\bsp ).*(\bz o.o|\bz o. o|\bz  o. o|\bz  o.o)|\bspółka z ograniczoną odpowiedzialnością/, data: [] },
-        { name: "Spółka Akcyjna.", match: /\bs.a|\bspółka akcyjna|\bs. a.|\b sa/, data: [] }*/
-    ];
+    const tags = {
+        "single": {
+            name: "Pojedyńcze",
+            length: 0
+        },
+        "small": {
+            name: "Małe Sieci",
+            length: 0
+        },
+        "higher_education": {
+            name: "Szkoły Wyższe",
+            match: /\buniwersytet|\bpolitechnik|\bakademi|\bszkoła wyższa/,
+            length: 0
+        },
+        "national_forrest": {
+            name: "Lasy Państwowe",
+            match: /\bnadleśnictwo|\bnadlesnictwo|\blasy|\blasów/,
+            length: 0
+        },
+        "national_park": {
+            name: "Parki Narodowe",
+            match: /(\bpark).*(\bnarodowy)/,
+            length: 0
+        },
+        "road": {
+            name: "Drogi",
+            match: /\bdróg|\bdrogi|\bautostrad/,
+            length: 0
+        },
+        "city_guard": {
+            name: "Straż Miejska",
+            match: /(\bstraż).*(\bmiejsk)/,
+            length: 0
+        },
+        "firefighter": {
+            name: "Straż Pożarna",
+            match: /(\bstraż).*(\bpożar)|\bpożar/,
+            length: 0
+        },
+        "volounteer_med": {
+            name: "Pogotowie Ochotnicze",
+            match: /(\bochotnicz).*(\bpogotow)/,
+            length: 0
+        },
+        "airmed": {
+            name: "Pogotowie Lotnicze",
+            match: /(\blotnicz).*(\bpogotow)/,
+            length: 0
+        },
+        "med": {
+            name: "Pogotowie Ratunkowe",
+            match: /\bpogotowi|\bszpital|\bopieki|\bopieka|\bnfz |\b zoz |\bratownictw|\bmedycyna/,
+            length: 0
+        },
+        "sport": {
+            name: "Sport",
+            match: /\bsport|\bbieg/,
+            length: 0
+        },
+        "transportation": {
+            name: "Taxi,Komunikacja Miejska",
+            match: /\bkomunikacja|\bkomunikacji|\bkomunikacyj|\btramwaj|\bautobus|\btaxi|\btaksówk|\btransport|\bprzewoźnik|\bprzewóz osób/,
+            length: 0
+        },
+        "railroad": {
+            name: "Kolej",
+            match: /\bpkp|\bkolej|\brail|\b db /,
+            length: 0
+        },
+        "water_supply": {
+            name: "Wodociagi",
+            match: /\bwodocią|\bwoda|\bwodno|\bwodo/,
+            length: 0
+        },
+        "waste": {
+            name: "Odpady",
+            match: /\bodpad|\butyliza|\boczyszcza|\bkanaliza/,
+            length: 0
+        },
+        "water_managment": {
+            name: "Gospodarka Wodna",
+            match: /\bgospodarki wodnej|(\bgospodar).*(\bwod)/,
+            length: 0
+        },
+        "heat_plant": {
+            name: "Ciepłownie",
+            match: /\bciepło|\bciepła|\bcieplne|\bcieplna/,
+            length: 0
+        },
+        "power_plant": {
+            name: "Elektrownie",
+            match: /\belektrow|\benergety/,
+            length: 0
+        },
+        "gas": {
+            name: "Gazownictwo",
+            match: /\bgazociąg|\bgazownictw/,
+            length: 0
+        },
+        "extraction": {
+            name: "Wydobywanie",
+            match: /\bkghm|\bkopalni|\bgórnict|\bwęgiel/,
+            length: 0
+        },
+        "common": {
+            name: "Gminy",
+            match: /\bgmina|\bgminy|\bgminna/,
+            length: 0
+        },
+        "county": {
+            name: "Powiaty",
+            match: /\bpowiat|\bstarost/,
+            length: 0
+        },
+        "city": {
+            name: "Miasta",
+            match: /\bmiasto|\bmiasta|\bmiejski|(\burząd).*(\bmiejsk|\bmiast)|\bprezydent|\bburmistrz/,
+            length: 0
+        },
+        "voivodeship": {
+            name: "Województwa",
+            match: /\bwojewoda|\bwojewództwo/,
+            length: 0
+        },
+        "security": {
+            name: "Ochrona",
+            match: /\bochrony|\bochrona|\bsecur|\bprotec|\bsolid|\bdetektyw|\b997|\bmienie|\bmienia|\binterwencj/,
+            length: 0
+        },
+        "air": {
+            name: "Lotnictwo",
+            match: /\bairport|\blotnis|\blotnicz/,
+            length: 0
+        },
+        "port": {
+            name: "Porty",
+            match: /\bport|\bmorski/,
+            length: 0
+        },
+        "culture": {
+            name: "Kultura",
+            match: /\bmuzeum|\bmuzea|\bteatr|\bfilharmon|\bkultur/,
+            length: 0
+        },
+        "bank": {
+            name: "Banki",
+            match: /\bbank/,
+            length: 0
+        },
+        "lotos": {
+            name: "Lotos",
+            match: /\blotos/,
+            length: 0
+        },
+        /*{ name: "PGE", match: /\bpge/, length: 0 },
+        { name: "Tauron", match: /\btauron/, length: 0 },
+        { name: "Energa", match: /\benerga/, length: 0 },
+        { name: "Telewizja", match: /\btvp|\btelewizja/, length: 0 },
+        { name: "Działalność Osobowa", match: /\bpod nazwą|\bpod firmą|\bprowadzący/, length: 0 },
+        { name: "Spółka z o.o.", match: /(\bsp.|\bsp ).*(\bz o.o|\bz o. o|\bz  o. o|\bz  o.o)|\bspółka z ograniczoną odpowiedzialnością/, length: 0 },
+        { name: "Spółka Akcyjna.", match: /\bs.a|\bspółka akcyjna|\bs. a.|\b sa/, length: 0 }*/
+    };
 
+    
     for (let i in json) {
         let company = json[i];
-        let towers = [];
+
         companyLoop:
         for (let j in company) {
-            countAll++;
-            let tower = company[j];
 
-            for (let k in customList) {
-                let list = customList[k];
-                if (tower.op[0].toLowerCase().match(list.match)) {
-                    list.data.push(tower);
+            countAll++;
+
+            let tower = company[j];
+            tower.tags = [];
+            tower.networkSize = Object.keys(company).length
+
+            for (let k in tags) {
+                let tag = tags[k];
+                if (tower.op[0].toLowerCase().match(tag.match || /a^/)) {
+                    tower.tags.push(k);
+                    tag.length++;
+                    points.push(tower);
                     continue companyLoop
                 };
             }
 
-            let companyLength = Object.keys(company).length;
-            if (companyLength > treshold) {
-                towers.push(tower);
-            } else if (companyLength > 1) {
-                small.push(tower);
-            } else singles.push(tower);
+            if (tower.networkSize > treshold) {
+                let tag = crypto.createHash('md5').update(tower.op[0]).digest('hex');
+                tower.tags.push(tag);
+                tags[tag] = (tags[tag] || {});
+                tags[tag].name = tower.op[0];
+                tags[tag].length = tower.networkSize;
 
-        }
-        if (towers.length) {
-            console.log(i + ': ' + towers.length);
-
-            companies++;
-            masts += towers.length;
-
-            let hashedName = crypto.createHash('md5').update(i.replace(/["|'|-|_|/|\|.|,| ]/g, "_")).digest('hex');
-            sources.layers.push({ length: towers.length, name: i, hash: hashedName });
-            parseGeoJSON(hashedName, towers);
+            } else if (tower.networkSize > 1) {
+                tower.tags.push("small");
+                tags["small"].length++
+            } else {
+                tower.tags.push("single");
+                tags["single"].length++
+            }
+            points.push(tower);
         }
     }
 
-    for (let k in customList) {
-        let list = customList[k];
-        let filename = list.name.toLowerCase().replace(/["|'|-|_|/|\|.|,| ]/g, "_").replace("__", "_");
-        console.log(list.name + ': ' + list.data.length);
-        sources.layers.push({ length: list.data.length, name: list.name, hash: filename });
-        parseGeoJSON(filename, list.data);
+    sources.tags = [];
+
+    for(tag in tags) {
+        sources.tags.push({tag: tag, name: tags[tag].name, length: tags[tag].length})
     }
-
-    console.log('\nFirm: ' + Object.keys(json).length)
-    console.log('Firm spełniających kryterium: ' + companies);
-    console.log('Nadajników spełniających kryterium: ' + masts);
-    console.log('Małe sieci: ' + small.length);
-    console.log('Pojedyńcze nadajniki: ' + singles.length);
-    console.log('Unikalnych punktów: ' + countAll);
-
-    sources.layers.push({ length: singles.length, name: 'Pojedyńcze', hash: 'singles' });
-    sources.layers.push({ length: small.length, name: 'Małe sieci', hash: 'small' });
-    sources.layers.sort((a, b) => (a.length < b.length) ? 1 : -1);
+    sources.tags.sort((a, b) => (a.length < b.length) ? 1 : -1);
     sources.generated = Date.now();
-    saveJSONToFile(sources, './src/', 'sources.json');
+    sources.layers = [];
+    sources.layers.push({
+        length: countAll,
+        name: 'Wszystko',
+        hash: 'all'
+    });
 
-    parseGeoJSON('singles', singles);
-    parseGeoJSON('small', small);
+    console.log(sources.tags);
+
+
+    saveToFile(JSON.stringify(sources), './src/', 'sources.json');
+
+    parseGeoJSON('all', points);
 }
 
 function parseGeoJSON(collection, data) {
@@ -180,46 +300,37 @@ function parseGeoJSON(collection, data) {
         features: []
     }
 
-    let json = {};
-
     for (let i in data) {
         let point = data[i];
-
-        let mapProperties = {
-            id: crypto.createHash('md5').update(point.name + point.lat + point.lon).digest('hex'),
-            name: point.name[0],
-            op: point.op[0],
-            tx: point.tx.join(', '),
-            networkType: point.networkType[0],
+        let properties = {
+            id: crypto.createHash('md5').update(point.name[0] + point.lat[0] + point.lon[0]).digest('hex'),
+            tag: point.tags[0],
+            mapName: point.name[0],
+            mapOp: point.op[0],
+            mapTx: point.tx.join(', '),
+            mapNetworkType: point.networkType[0],
             mapRadius: point.radius[0],
             mapERP: point.erp[0],
-            mapLat: parseLatLon(point.lat[0]),
-            mapLon: parseLatLon(point.lon[0]),
+            lat: parseLatLon(point.lat[0]),
+            lon: parseLatLon(point.lon[0]),
         };
 
-        
+        properties = Object.assign(point, properties);
+
         geojson.features.push({
             type: "Feature",
-            properties: mapProperties,
+            properties: properties,
             geometry: {
                 type: "Point",
-                coordinates: [parseLatLon(point.lon[0]), parseLatLon(point.lat[0])]
+                coordinates: [properties.lon, properties.lat]
             }
         });
-
-        point.id = mapProperties.id
-        point.mapLat = mapProperties.mapLat
-        point.mapLon = mapProperties.mapLon
-
-        json[point.id] = point;   
     }
-
-    saveJSONToFile(json, './dist/data/details/', collection + '.json');
-    saveJSONToFile(geojson, './dist/data/', collection + '.geojson');
+    saveToFile(JSON.stringify(geojson), './dist/data/', collection + '.geojson');
 }
 
-function saveJSONToFile(data, path, name) {
-    fs.writeFile(path + name, JSON.stringify(data), 'utf8', function (err) {
+function saveToFile(data, path, name) {
+    fs.writeFile(path + name, data, 'utf8', function (err) {
         if (err) {
             return console.log(err);
         }
@@ -230,7 +341,7 @@ function parseLatLon(coordinate = '') {
     let sign = 1;
     if (coordinate.match(/S|W/)) sign = -1;
     coordinate = coordinate.split(/N|S|W|E|'|"/);
-    return Number.parseFloat((parseInt(coordinate[0]) + parseInt(coordinate[1]) / 60 + parseInt(coordinate[2]) / 3600).toFixed(6)) * sign;
+    return (Number.parseFloat((parseInt(coordinate[0]) + parseInt(coordinate[1]) / 60 + parseInt(coordinate[2]) / 3600).toFixed(6)) * sign) || 0;
 }
 
 function searchAndDestroy() {
@@ -239,10 +350,15 @@ function searchAndDestroy() {
         parseFiles()
     } else {
         console.log("Pobieram dane z " + danegovplAPI);
-        request({ url: danegovplAPI, json: true }, function (error, response, body) {
+        request({
+            url: danegovplAPI,
+            json: true
+        }, function (error, response, body) {
             const source = body.data.attributes.file_url;
             console.log("Pobieram dane z " + source);
-            request(source).pipe(unzipper.Extract({ path: path.resolve(__dirname, 'data') })).on('finish', parseFiles);
+            request(source).pipe(unzipper.Extract({
+                path: path.resolve(__dirname, 'data')
+            })).on('finish', parseFiles);
         });
     }
 }

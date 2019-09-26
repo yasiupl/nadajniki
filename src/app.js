@@ -118,12 +118,16 @@ const paint = {
   "circle-radius": [
     'interpolate', ['linear'],
     ['zoom'],
-    7, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 100], 4],
-    12, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 1000], 10]
+    7, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 100], 3],
+    20, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 1000], 16]
   ],
   "circle-stroke-width": 1,
   "circle-opacity": 0.8,
-  "circle-stroke-color": "#FFF"
+  "circle-stroke-color": ['match',
+  ['get', 'mapNetworkType'],
+  "B", '#555',
+  "D", '#555',
+  '#FFF']
 }
 
 const map = new mapboxgl.Map({

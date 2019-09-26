@@ -261,7 +261,7 @@ function detailsLoadInView() {
               (bandplan[frequency].stations = bandplan[frequency].stations || []).push(feature.properties.name);
 
           }*/
-        element.innerHTML += `<li class="collection-item truncate" onclick="detailsLoad('${feature.sourceLayer || feature.layer}','${feature.properties.id}')">${feature.properties.mapOp }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.mapNetworkType[1]]}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.mapTx}</span></li>`;
+        element.innerHTML += `<li class="collection-item truncate" onclick="detailsLoad('${feature.sourceLayer || feature.layer}','${feature.properties.id}')">${feature.properties.mapOp }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.mapNetworkType][1]}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.mapTx}</span></li>`;
       }
     }
     //console.log(bandplan);

@@ -147,28 +147,34 @@ map.addControl(new mapboxgl.NavigationControl());
 
 map.on('load', function () {
 
-  map.addLayer({
-    id: 'nadajniki',
-    type: "circle",
-    source: {
-      type: 'vector',
-      url: `mapbox://${sources.uploadedTileset}`
-    },
-    'source-layer': "original",
-    paint: paint
-  });
+  if (sources.uploadedTileset) {
+    map.addLayer({
+      id: 'nadajniki',
+      type: "circle",
+      source: {
+        type: 'vector',
+        url: `mapbox://${sources.uploadedTileset}`
+      },
+      'source-layer': "original",
+      paint: paint
+    });
 
-  map.on('click', 'nadajniki', (e) => {
-    detailsLoad(e.features[0].properties.id);
-  });
+    map.on('click', 'nadajniki', (e) => {
+      detailsLoad(e.features[0].properties.id);
+    });
 
-  map.on('mouseenter', 'nadajniki', function () {
-    map.getCanvas().style.cursor = 'pointer';
-  });
+    map.on('mouseenter', 'nadajniki', function () {
+      map.getCanvas().style.cursor = 'pointer';
+    });
 
-  map.on('mouseleave', 'nadajniki', function () {
-    map.getCanvas().style.cursor = '';
-  });
+    map.on('mouseleave', 'nadajniki', function () {
+      map.getCanvas().style.cursor = '';
+    });
+  } else {
+    for (let i in layers) {
+      addLayerFromHash(map, layers[i].hash);
+    }
+  }
 
 });
 
@@ -189,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function () {
   toggleAll.onclick = toggleAllFilters;
   filters.appendChild(toggleAll);
 
-    
+
   let divider1 = document.createElement('li');
   divider1.innerHTML = '<a>Typy sieci (Kliknij aby przełączyć)</a>';
   divider1.onclick = toggleAllFilters;
@@ -201,7 +207,9 @@ document.addEventListener('DOMContentLoaded', function () {
     let type = types[i];
     let link = document.createElement('li');
     link.innerHTML = `<a class="truncate"><label><input type="checkbox" id="toggleType${i}" toggles="mapNetworkType" data="${i}" checked="checked"/><span></span></label><span class="badge" style="background-color:${type.color}"> </span>${type.name}</a>`;
-    link.onclick = function() {toggleType(i)};
+    link.onclick = function () {
+      toggleType(i)
+    };
     filters.appendChild(link);
   }
 
@@ -210,14 +218,16 @@ document.addEventListener('DOMContentLoaded', function () {
   divider2.onclick = toggleAllFilters;
   divider2.category = 'toggleTag';
   filters.appendChild(divider2);
-  
+
 
   // Wypisz wszystkie tagi w menu bocznym
   const tags = sources.tags;
   for (let tag of tags) {
     let link = document.createElement('li');
     link.innerHTML = `<a class="truncate"><label><input type="checkbox" id="toggleTag${tag.tag}" toggles="tag" data="${tag.tag}" checked="checked"/><span></span></label><span class="badge">${tag.length}</span>${tag.name}</a>`;
-    link.onclick = function() {toggleTag(tag.tag)};
+    link.onclick = function () {
+      toggleTag(tag.tag)
+    };
     filters.appendChild(link);
   }
 
@@ -312,11 +322,13 @@ function detailsLoadInView() {
               (bandplan[frequency].stations = bandplan[frequency].stations || []).push(feature.properties.name);
 
           }*/
-          let element = document.createElement('li');
-          element.className = 'collection-item truncate';
-          element.onclick = function() {detailsLoad(feature.properties.id)};
-          element.innerHTML = `${feature.properties.mapOp }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.mapNetworkType].color}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.mapTx}</span>`;
-          collection.appendChild(element);
+        let element = document.createElement('li');
+        element.className = 'collection-item truncate';
+        element.onclick = function () {
+          detailsLoad(feature.properties.id)
+        };
+        element.innerHTML = `${feature.properties.mapOp }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.mapNetworkType].color}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.mapTx}</span>`;
+        collection.appendChild(element);
       }
     }
     //console.log(bandplan);
@@ -366,7 +378,7 @@ function toggleAllFilters(e) {
   console.log(category)
 
   checkboxes.forEach((checkbox) => {
-    if(checkbox.id.match(category)) {
+    if (checkbox.id.match(category)) {
       if (status == 'none') {
         this.data = 'all';
         checkbox.checked = true;
@@ -400,4 +412,27 @@ function detailsLegend() {
     legendOfType.innerHTML = `<div style="background-color: ${type.color}" class="circle"></div><span class="title">Typ ${i}: ${type.name} </span><p>${type.description}</p>`
     legend.appendChild(legendOfType);
   }
+}
+
+function addLayerFromHash(map, hash) {
+  map.addLayer({
+    id: hash,
+    type: "circle",
+    source: {
+      type: "geojson",
+      data: `./data/${hash}.geojson?t=${sources.generated}`
+    },
+    paint: paint
+  });
+  map.on('click', hash, (e) => {
+    loadDetails(e.features[0].properties.id);
+  });
+
+  map.on('mouseenter', hash, function () {
+    map.getCanvas().style.cursor = 'pointer';
+  });
+
+  map.on('mouseleave', hash, function () {
+    map.getCanvas().style.cursor = '';
+  });
 }

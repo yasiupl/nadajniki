@@ -24,9 +24,11 @@ module.exports = {
             hash: true,
             title: 'Mapa nadajników radiowych',
             template: './src/index.html',
-            filename: './index.html'
+            filename: './index.html',
+            favicon: './src/assets/favicon.ico'
         }),
         new WebpackPwaManifest({
+            fingerprints: false,
             name: 'Mapa Nadajników',
             short_name: 'Nadajniki',
             description: 'Mapa pozwoleń radiowych RRL UKE.',

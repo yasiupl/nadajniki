@@ -268,6 +268,7 @@ function detailsLoad(id, mapInstance = map) {
 
   document.querySelector("#detailsClose").addEventListener('click', () => {
     details.data = '';
+    details.scrollTop = 0;
     clearPopUps();
     detailsLegend();
     detailsLoadInView();

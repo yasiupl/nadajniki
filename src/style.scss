@@ -9,6 +9,7 @@ body {
 }
 
 nav {
+  z-index: 100;
   @extend .blue;
 }
 
@@ -38,7 +39,7 @@ main {
     bottom: 0px;
     width: 98%;
     left: 1%;
-    max-height: 50vh;
+    max-height: 30vh;
   }
 
   .collection-item {

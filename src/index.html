@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
+  <base target="_blank">
   <title><%= htmlWebpackPlugin.options.title %></title>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,18 +36,32 @@
     <li><a href="https://patreon.com/yasiupl"><i class="material-icons">monetization_on</i>Wsparcie</a></li>
     <li><a href="https://paypal.me/yasiupl"><i class="material-icons">money</i>Donacje</a></li>
     <li><a href="https://github.com/yasiupl/nadajniki"><i class="material-icons">code</i>Kod Źródłowy</a></li>
+    <li><a href="https://dane.gov.pl/dataset/1070"><i class="material-icons">data_usage</i>Dane Źródłowe</a></li>
     <li>
       <div class="divider"></div>
     </li>
     <li><a class="subheader">Projekty</a></li>
     <li><a href="https://rocket.watch"><i class="material-icons">launch</i>rocket.watch</a></li>
-    <li><a href="#!"><i class="material-icons">launch</i>Mapa nadajników radiowych</a></li>
+    <li><a href="https://nadajniki.yasiu.pl"><i class="material-icons">launch</i>Mapa nadajników radiowych</a></li>
   </ul>
 
   <main>
     <div id="map"></div>
     <div id="details">Kliknij na mapę lub przybliż aby wyświelić więcej informacji.</div>
+
+    <div id="disclaimer" class="modal">
+      <div class="modal-content">
+        <h4>Uwaga!</h4>
+        <p>Częstotliwości podane na tej stonie są informacją publiczną i służą tylko do nasłuchu.</p>
+        <h5><b>Zabrania się nadawać na każdej z częstotliwości podanych na tej stronie bez odpowiednich zezwoleń.</b></h5>
+        <p>Dane zawarte na tej witrynie pochodzą z publicznych zasobów Urzędu Komunikacji Elektronicznej dostępnych <a href="https://dane.gov.pl/dataset/1070">tutaj</a>.</p>
+      </div>
+      <div class="modal-footer">
+        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Rozumiem</a>
+      </div>
+    </div>
   </main>
+  
 </body>
 
 </html>

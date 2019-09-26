@@ -187,6 +187,13 @@ document.addEventListener('DOMContentLoaded', function () {
     edge: 'right'
   });
   M.Sidenav.init(document.querySelector('#menu'));
+  
+  // Wyświetl Disclaimer na pierwszym uruchomieniu strony.
+  if(!localStorage.getItem("disclaimer")) {
+    let modal = M.Modal.init(document.querySelector('.modal'));
+    modal.open();
+    localStorage.setItem("disclaimer", true);
+  }
 
 
   const filters = document.getElementById('filters');

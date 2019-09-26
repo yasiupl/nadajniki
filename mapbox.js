@@ -10,6 +10,8 @@ const uploadsClient = mbxUploads({
     accessToken: APIkey
 });
 
+const date = new Date();
+
 const getCredentials = () => {
     return uploadsClient
         .createUploadCredentials()
@@ -40,7 +42,7 @@ async function fireAndForget() {
 
     console.log("Processing...")
     await uploadsClient.createUpload({
-            mapId: `${APIuser}.nadajniki-${(new Date()).toISOString().split("T")[0]}`,
+            mapId: `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth()}`,
             url: credentials.url
         })
         .send().catch((e) => console.log(e)).then(response => {

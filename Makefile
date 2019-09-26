@@ -7,7 +7,7 @@ serve:
 	node_modules/.bin/webpack-dev-server
 
 build-data:
-	rm ./src/sources.json
+	rm -f ./src/sources.json
 	rm -rf ./dist/data/
 	mkdir -p ./dist/data/
 	node parse_data.js

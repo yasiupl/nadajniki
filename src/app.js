@@ -3,117 +3,179 @@ import mapboxgl from 'mapbox-gl'
 import sources from './sources.json'
 import './style.scss'
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js');
+  });
+}
+
 mapboxgl.accessToken = 'pk.eyJ1IjoieWFzaXUiLCJhIjoiY2o4dWF2dmZnMHEwODMzcnB6NmZ5cGpicCJ9.XzC5pC59qPSmqbLv2xBDQw';
 
 const layers = sources.layers;
 
 const headers = {
-    permitID: 'Nr pozwolenia',
-    permitExpiry: 'Data wygaśnięcia',
-    name: 'Nazwa stacji',
-    stationType: 'Rodzaj stacji',
-    networkType: 'Rodzaj sieci',
-    lon: 'Długość geograficzna',
-    lat: 'Szerokość geograficzna',
-    radius: 'Promień obszaru obsługi',
-    location: 'Lokalizacja stacji',
-    erp: 'Maksymalna zastępcza moc promieniowania [dBW]',
-    azimuth: 'Azymut',
-    elevation: 'Elewacja',
-    polarization: 'Polaryzacja',
-    gain: 'Zysk anteny',
-    antennaHeight: 'Wysokość umieszczenia anteny',
-    groundHeight: 'Wysokość anteny',
-    verticalCharacteristic: 'Kod charakterystyki promieniowania - pion',
-    horizontalCharacteristic: 'Kod charakterystyki promieniowania - poziom',
-    tx: 'Częstotliwości nadawcze [MHz]',
-    rx: 'Częstotliwości odbiorcze [MHz]',
-    txSpan: 'Szerokości kanałów nadawczych [kHz]',
-    rxSpan: 'Szerokości kanałów odbiorczych [kHz]',
-    op: 'Operator',
-    opAdress: 'Adres operatora'
+  permitID: 'Nr pozwolenia',
+  op: 'Operator',
+  opAdress: 'Adres operatora',
+  name: 'Nazwa stacji',
+  stationType: 'Rodzaj stacji',
+  networkType: 'Rodzaj sieci',
+  lon: 'Długość geograficzna',
+  lat: 'Szerokość geograficzna',
+  radius: 'Promień obszaru obsługi',
+  location: 'Lokalizacja stacji',
+  erp: 'Maksymalna moc zastępcza (ERP) [dBW]',
+  azimuth: 'Azymut',
+  elevation: 'Elewacja',
+  polarization: 'Polaryzacja',
+  gain: 'Zysk anteny',
+  antennaHeight: 'Wysokość umieszczenia anteny',
+  groundHeight: 'Wysokość anteny',
+  verticalCharacteristic: 'Kod charakterystyki promieniowania - pion',
+  horizontalCharacteristic: 'Kod charakterystyki promieniowania - poziom',
+  tx: 'Częstotliwości nadawcze [MHz]',
+  rx: 'Częstotliwości odbiorcze [MHz]',
+  txSpan: 'Szerokości kanałów nadawczych [kHz]',
+  rxSpan: 'Szerokości kanałów odbiorczych [kHz]',
+  permitExpiry: 'Data wygaśnięcia',
 }
 
 const types = {
-    A: ["Dyspozytorska", "#03a8a0"],
-    B: ["Przywoławcza", "#039c4b"],
-    C: ["Transmisja danych", "#66d313"],
-    D: ["Retransmisja", "#fedf17"],
-    E: ["Zdalne sterowanie", "#ff0984"],
-    F: ["Powiadamiania o alarmach", "#21409a"],
-    P: ["Bezprzewodowe poszukiwanie osób", "#04adff"],
-    Q: ["Mikrofony bezprzewodowe", "#e48873"],
-    R: ["Reportażowa", "#f16623"],
-    T: ["Trunkingowa", "#f44546"]
+  A: {
+    name: "Dyspozytorska",
+    description: "Stacja radiowa dyspozytorska",
+    color: "#03a8a0"
+  },
+  B: {
+    name: "Przywoławcza",
+    description: "Stacja radiowa przywoławcza.",
+    color: "#039c4b"
+  },
+  C: {
+    name: "Transmisja danych",
+    description: "np. stany liczników cyfrowych.",
+    color: "#66d313"
+  },
+  D: {
+    name: "Retransmisja",
+    description: "Retransmisja sygnałów / przemiennik.",
+    color: "#fedf17"
+  },
+  E: {
+    name: "Zdalne sterowanie",
+    description: "Zdalne sterowanie urządzeniami.",
+    color: "#ff0984"
+  },
+  F: {
+    name: "Powiadamiania o alarmach",
+    description: "Systemy alarmowe ochrony mienia.",
+    color: "#21409a"
+  },
+  P: {
+    name: "Bezprzewodowe poszukiwanie osób",
+    description: "Stacje radiowe systemu bezprzewodowego poszukiwania osób.",
+    color: "#04adff"
+  },
+  Q: {
+    name: "Mikrofony bezprzewodowe",
+    description: "np. Technika estradowa.",
+    color: "#e48873"
+  },
+  R: {
+    name: "Reportażowa",
+    description: "Stacja reporterów rozgłośni radiowej.",
+    color: "#f16623"
+  },
+  T: {
+    name: "Trunkingowa",
+    description: "Sieć kumulująca sygnały z wielu źródeł w jedną wiązkę.",
+    color: "#f44546"
+  },
+  L: {
+    name: "Nieznane",
+    description: "Nowy typ UKE.",
+    color: "#666"
+  }
 }
 
-/* 
-const headers = [
-    'Nr pozwolenia',
-    'Data wygaśnięcia',
-    'Nazwa stacji',
-    'Rodzaj stacji',
-    'Rodzaj sieci',
-    'Długość geograficzna',
-    'Szerokość geograficzna',
-    'Promień obszaru obsługi',
-    'Lokalizacja stacji',
-    'Maksymalna zastępcza moc promieniowania [dBW]',
-    'Azymut',
-    'Elewacja',
-    'Polaryzacja',
-    'Zysk anteny',
-    'Wysokość umieszczenia anteny',
-    'Wysokość terenu',
-    'Kod charakterystyki promieniowania - poziom',
-    'Kod charakterystyki promieniowania - pion',
-    'Częstotliwości nadawcze [MHz]',
-    'Częstotliwości odbiorcze [MHz]',
-    'Szerokości kanałów nadawczych [kHz]',
-    'Szerokości kanałów odbiorczych [kHz]',
-    'Operator',
-    'Adres operatora'
-]
-*/
+const paint = {
+  "circle-color": [
+    'match',
+    ['get', 'mapNetworkType'],
+    "A", types["A"].color,
+    "B", types["B"].color,
+    "C", types["C"].color,
+    "D", types["D"].color,
+    "E", types["E"].color,
+    "F", types["F"].color,
+    "P", types["P"].color,
+    "Q", types["Q"].color,
+    "R", types["R"].color,
+    "T", types["T"].color,
+    "L", types["L"].color,
+    '#11b4da'
+  ],
+  "circle-radius": [
+    'interpolate', ['linear'],
+    ['zoom'],
+    7, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 100], 4],
+    12, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 1000], 10]
+  ],
+  "circle-stroke-width": 1,
+  "circle-opacity": 0.8,
+  "circle-stroke-color": "#FFF"
+}
 
 const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/light-v10',
-    hash: true,
-    center: [19.134422, 51.919231],
-    zoom: 6
+  container: 'map',
+  style: 'mapbox://styles/mapbox/light-v10',
+  hash: true,
+  center: [19.134422, 51.919231],
+  zoom: 6
 });
 
 // Add geolocate control to the map.
 map.addControl(new mapboxgl.GeolocateControl({
-    positionOptions: {
-        enableHighAccuracy: true
-    },
-    trackUserLocation: true
+  positionOptions: {
+    enableHighAccuracy: true
+  },
+  trackUserLocation: true
 }));
 
 map.addControl(new mapboxgl.NavigationControl());
 
 
 map.on('load', function () {
-    let layersList = document.getElementById('layers');
 
-    let toggleAll = document.createElement('li');
-    toggleAll.data = 'all';
-    toggleAll.innerHTML = '<a>Przełącz Wszystkie</a>';
-    toggleAll.onclick = toggleAllLayers;
-    layersList.appendChild(toggleAll);
+  if (sources.uploadedTileset) {
+    map.addLayer({
+      id: 'nadajniki',
+      type: "circle",
+      source: {
+        type: 'vector',
+        url: `mapbox://${sources.uploadedTileset}`
+      },
+      'source-layer': "original",
+      paint: paint
+    });
 
+    map.on('click', 'nadajniki', (e) => {
+      detailsLoad(e.features[0].properties.id);
+    });
+
+    map.on('mouseenter', 'nadajniki', function () {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+
+    map.on('mouseleave', 'nadajniki', function () {
+      map.getCanvas().style.cursor = '';
+    });
+  } else {
     for (let i in layers) {
-        // Add a layer showing the places.
-        addLayerFromHash(map, layers[i].hash);
-
-        let link = document.createElement('li');
-        link.data = layers[i].hash;
-        link.innerHTML = `<a class="truncate"><label><input type="checkbox" id="${layers[i].hash}" checked="checked"/><span></span></label><span class="badge">${layers[i].length}</span>${layers[i].name}</a>`;
-        link.onclick = toggleLayerButton;
-        layersList.appendChild(link);
+      addLayerFromHash(map, layers[i].hash);
     }
+  }
+
 });
 
 map.on('idle', detailsLoadInView);
@@ -121,285 +183,256 @@ map.on('idle', detailsLoadInView);
 map.on('moveend', detailsLoadInView);
 
 document.addEventListener('DOMContentLoaded', function () {
-    const details = document.querySelector('#details');
+  M.Sidenav.init(document.querySelector('#filters'), {
+    edge: 'right'
+  });
+  M.Sidenav.init(document.querySelector('#menu'));
 
-    detailsLegend();
 
-    M.Sidenav.init(document.querySelector('#layers'), { edge: 'right' });
-    M.Sidenav.init(document.querySelector('#menu'));
+  const filters = document.getElementById('filters');
+  let toggleAll = document.createElement('li');
+  toggleAll.innerHTML = '<a>Przełącz Wszystkie</a>';
+  toggleAll.onclick = toggleAllFilters;
+  filters.appendChild(toggleAll);
+
+
+  let divider1 = document.createElement('li');
+  divider1.innerHTML = '<a>Typy sieci (Kliknij aby przełączyć)</a>';
+  divider1.onclick = toggleAllFilters;
+  divider1.category = 'toggleType';
+  filters.appendChild(divider1);
+
+  // Wypisz wszystkie typy w menu bocznym
+  for (let i in types) {
+    let type = types[i];
+    let link = document.createElement('li');
+    link.innerHTML = `<a class="truncate"><label><input type="checkbox" id="toggleType${i}" toggles="mapNetworkType" data="${i}" checked="checked"/><span></span></label><span class="badge" style="background-color:${type.color}"> </span>${type.name}</a>`;
+    link.onclick = function () {
+      toggleType(i)
+    };
+    filters.appendChild(link);
+  }
+
+  let divider2 = document.createElement('li');
+  divider2.innerHTML = '<a>Sieci (Kliknij aby przełączyć)</a>';
+  divider2.onclick = toggleAllFilters;
+  divider2.category = 'toggleTag';
+  filters.appendChild(divider2);
+
+
+  // Wypisz wszystkie tagi w menu bocznym
+  const tags = sources.tags;
+  for (let tag of tags) {
+    let link = document.createElement('li');
+    link.innerHTML = `<a class="truncate"><label><input type="checkbox" id="toggleTag${tag.tag}" toggles="tag" data="${tag.tag}" checked="checked"/><span></span></label><span class="badge">${tag.length}</span>${tag.name}</a>`;
+    link.onclick = function () {
+      toggleTag(tag.tag)
+    };
+    filters.appendChild(link);
+  }
+
+  // przerwa od dołu aby wszystkie elementy były widoczne
+  let divider3 = document.createElement('li');
+  divider3.innerHTML = '<a></br></br></a>';
+  filters.appendChild(divider3);
+
+  detailsLegend();
 });
 
-function addLayerFromHash(map, hash) {
 
-    //if (typeof map.getLayer(hash) !== 'undefined') {
-    map.addLayer({
-        id: hash,
-        type: "circle",
-        source: {
-            type: "geojson",
-            data: `./data/${hash}.geojson?t=${sources.generated}`
-        },
-        paint: {
-            "circle-color": [
-                'match',
-                ['get', 'networkType'],
-                "A", types["A"][1],
-                "B", types["B"][1],
-                "C", types["C"][1],
-                "D", types["D"][1],
-                "E", types["E"][1],
-                "F", types["F"][1],
-                "P", types["P"][1],
-                "Q", types["Q"][1],
-                "R", types["R"][1],
-                "T", types["T"][1],
-                '#11b4da'
-            ],
-            "circle-radius": [
-                'interpolate', ['linear'], ['zoom'],
-                7, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 100], 2],
-                12, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 1000], 10]
-            ],
-            "circle-stroke-width": 1,
-            "circle-opacity": 0.8,
-            /*[
-                "+",
-                ["/", ['log10',
-                ['number', ['get', 'mapERP'], 1]],5],
-                0.5
-            ],*/
-            "circle-stroke-color": "#FFF"
-        }
-    });
+function detailsLoad(id, mapInstance = map) {
+  let details = document.querySelector('#details');
+  let description = ''
+  const feature = map.queryRenderedFeatures({
+    filter: ['==', 'id', id]
+  });
+  const properties = feature[0].properties;
+  const coordinates = [properties.lon, properties.lat];
 
+  for (let i in headers) {
 
-    // When a click event occurs on a feature in the places layer, open a popup at the
-    // location of the feature, with description HTML from its properties.
-    map.on('click', hash, (e) => { loadDetails(e.features[0].layer.id, e.features[0].properties.id); });
+    let property = (typeof properties[i] === 'string') ? properties[i].replace('["', '').replace('"]', '').split('","') : properties[i];
+    //let property = JSON.parse(properties[i]);
 
-    // Change the cursor to a pointer when the mouse is over the places layer.
-    map.on('mouseenter', hash, function () {
-        map.getCanvas().style.cursor = 'pointer';
-    });
-
-    // Change it back to a pointer when it leaves.
-    map.on('mouseleave', hash, function () {
-        map.getCanvas().style.cursor = '';
-    });
-    //}
-}
-
-async function loadProperties(collection) {
-    const response = await fetch(`./data/details/${collection}.json?t=${sources.generated}`);
-    const data = await response.json();
-    return data;
-}
-
-window.loadDetails = async function (layer, id, mapInstance = map) {
-    let description = ''
-    const collection = await loadProperties(layer);
-    const properties = collection[id];
-    const coordinates = [properties.mapLon, properties.mapLat];
-
-    for (let i in headers) {
-        if (i == 'networkType') {
-            description += `<b>${headers[i]}:</b> ${properties[i]}: ${types[properties[i][0]][0]}</br>`;
-            continue
-        }
-        description += `<b>${headers[i]}:</b> ${properties[i].join(', ')}</br>`;
+    if (i == 'networkType') {
+      console.log(property[0])
+      description += `<b>${headers[i]}:</b> ${property}: ${types[property[0]].name}</br>`;
+      continue
     }
+    description += `<b>${headers[i]}:</b> ${(Array.isArray(property))?property.join(', ') : property}</br>`;
+  }
 
-    details.data = 'details'
-    details.innerHTML = `<i id="detailsClose" class="material-icons right">arrow_back</i>`
-    details.innerHTML += description;
+  details.data = 'details'
+  details.innerHTML = `<i id="detailsClose" class="material-icons right">arrow_back</i>`
+  details.innerHTML += description;
 
-    document.querySelector("#detailsClose").addEventListener('click', () => {
-        details.data = '';
-        clearPopUps();
-        detailsLegend();
-        detailsLoadInView();
-    });
+  document.querySelector("#detailsClose").addEventListener('click', () => {
+    details.data = '';
+    clearPopUps();
+    detailsLegend();
+    detailsLoadInView();
+  });
 
-    /* 
-        mapInstance.flyTo({
-        center: coordinates,
-        offset: [(window.innerWidth  > 992) ? window.innerWidth  / 10 : 0, (window.innerWidth  < 992) ? -1 * window.innerHeight  / 4 : 0],
-        speed: 0.8,
-        zoom: 14,
-        bearing: 0
-    });
-    */
+  /* 
+      mapInstance.flyTo({
+      center: coordinates,
+      offset: [(window.innerWidth  > 992) ? window.innerWidth  / 10 : 0, (window.innerWidth  < 992) ? -1 * window.innerHeight  / 4 : 0],
+      speed: 0.8,
+      zoom: 14,
+      bearing: 0
+  });
+  */
 
+  let popup = new mapboxgl.Popup()
+    .setLngLat(coordinates)
+    .setHTML(`<center>${properties.mapOp.slice(0, 30)}...</br><b>${properties.mapTx}</b></center>`)
+    .addTo(mapInstance);
 
-    let popup = new mapboxgl.Popup()
-        .setLngLat(coordinates)
-        .setHTML(`<center>${properties.op.slice(0, 30)}...</br><b>${properties.tx}</b></center>`)
-        .addTo(mapInstance);
-
-    (window.popups = window.popups || []).push(popup)
+  (window.popups = window.popups || []).push(popup)
 }
 
 function detailsLoadInView() {
+  let details = document.querySelector('#details');
+  let zoomTreshold = 12;
+  let features = map.queryRenderedFeatures();
+  let bounds = map.getBounds();
+  //let bandplan = {};
 
-    let zoomTreshold = 12;
-    let features = map.queryRenderedFeatures();
-    let bounds = map.getBounds();
-    //let bandplan = {};
+  if (details.data != 'details' && map.getZoom() > zoomTreshold) {
+    details.innerHTML = `Nadajniki w widoku. Oddal aby zobaczyć legendę.`;
+    details.data = 'collection'
 
-    if (details.data != 'details' && map.getZoom() > zoomTreshold) {
-        details.innerHTML = `Nadajniki w widoku. Oddal aby zobaczyć legendę.`;
-        details.data = 'collection'
-
-        let element = document.createElement('ul');
-        element.className = 'collection'
-        details.appendChild(element);
+    let collection = document.createElement('ul');
+    collection.className = 'collection'
+    details.appendChild(collection);
 
 
-        for (let i in features) {
-            let feature = features[i];
-            if (feature.properties.mapLat < bounds._ne.lat && feature.properties.mapLat > bounds._sw.lat && feature.properties.mapLon < bounds._ne.lng && feature.properties.mapLon > bounds._sw.lng) {
-               /* 
-               // Bandplan w danym widoku
-               let frequencies = feature.properties.tx.split(", ");
-                for (let j in frequencies) {
-                    let frequency = frequencies[j];
-                    bandplan[frequency] = bandplan[frequency] || {};
-                    bandplan[frequency].op = feature.properties.op;
-                    (bandplan[frequency].stations = bandplan[frequency].stations || []).push(feature.properties.name);
 
-                }*/
-            element.innerHTML += `<li class="collection-item truncate" onclick="loadDetails('${feature.layer.id}','${feature.properties.id}')">${feature.properties.op }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.networkType.split(',')[0]][1]}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.tx}</span></li>`;
-            }
-        }
-        //console.log(bandplan);
+    for (let i in features) {
+      let feature = features[i];
+      if (feature.properties.lat < bounds._ne.lat && feature.properties.lat > bounds._sw.lat && feature.properties.lon < bounds._ne.lng && feature.properties.lon > bounds._sw.lng) {
+
+        /* 
+         // Bandplan w danym widoku
+         let frequencies = feature.properties.tx.split(", ");
+          for (let j in frequencies) {
+              let frequency = frequencies[j];
+              bandplan[frequency] = bandplan[frequency] || {};
+              bandplan[frequency].op = feature.properties.op;
+              (bandplan[frequency].stations = bandplan[frequency].stations || []).push(feature.properties.name);
+
+          }*/
+        let element = document.createElement('li');
+        element.className = 'collection-item truncate';
+        element.onclick = function () {
+          detailsLoad(feature.properties.id)
+        };
+        element.innerHTML = `${feature.properties.mapOp }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.mapNetworkType].color}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.mapTx}</span>`;
+        collection.appendChild(element);
+      }
     }
-    if (details.data != 'details' && map.getZoom() < zoomTreshold) detailsLegend();
+    //console.log(bandplan);
+  }
+  if (details.data != 'details' && map.getZoom() < zoomTreshold) detailsLegend();
 }
 
-function detailsLegend() {
-    details.innerHTML = `Kliknij na mapę lub przybliż aby wyświelić więcej informacji.
-    <ul class="collection">
-    <li class="collection-item avatar">
-      <div style="background-color: #03a8a0" class="circle"></div>
-      <span class="title">Typ A</span>
-      <p>
-        Stacja nadawcza Dyspozytorska.
-      </p>
-    </li>
-    <li class="collection-item avatar">
-      <div style="background-color: #039c4b" class="circle"></div>
-      <span class="title">Typ B</span>
-      <p>
-        Stacja nadawcza Przywoławcza.
-      </p>
-    </li>
-    <li class="collection-item avatar">
-      <div style="background-color: #66d313" class="circle"></div>
-      <span class="title">Typ C</span>
-      <p>
-        Stacja transmisji danych.
-      </p>
-    </li>
-    <li class="collection-item avatar">
-      <div style="background-color: #fedf17" class="circle"></div>
-      <span class="title">Typ D</span>
-      <p>
-        Stacja retransmisyjna / przemiennik.
-      </p>
-    </li>
-    <li class="collection-item avatar">
-      <div style="background-color: #ff0984" class="circle"></div>
-      <span class="title">Typ E</span>
-      <p>
-        Stacja zdalnego sterowania.
-      </p>
-    </li>
-    <li class="collection-item avatar">
-      <div style="background-color: #21409a" class="circle"></div>
-      <span class="title">Typ F</span>
-      <p>
-        Stacja powiadomianiania o alarmach.
-      </p>
-    </li>
-    <li class="collection-item avatar">
-      <div style="background-color: #04adff" class="circle"></div>
-      <span class="title">Typ P</span>
-      <p>
-        Stacja bezprzewodowego poszukiwania osób.
-      </p>
-    </li>
-    <li class="collection-item avatar">
-      <div style="background-color: #e48873" class="circle"></div>
-      <span class="title">Typ Q</span>
-      <p>
-        Mikrofony bezprzewodowe.
-      </p>
-    </li>
-    <li class="collection-item avatar">
-      <div style="background-color: #f16623" class="circle"></div>
-      <span class="title">Typ R</span>
-      <p>
-        Stacja Reportażowa.
-      </p>
-    </li>
-    <li class="collection-item avatar">
-      <div style="background-color: #f44546" class="circle"></div>
-      <span class="title">Typ T</span>
-      <p>
-        Stacja Trunkingowa.
-      </p>
-    </li>
-  </ul>`
+
+function toggleTag(tag) {
+  let checkbox = document.getElementById('toggleTag' + tag);
+  if (checkbox.checked == true) {
+    checkbox.checked = false;
+  } else {
+    checkbox.checked = true;
+  }
+  applyFilterFromChecboxes();
 }
 
-function toggleLayerButton(e) {
-
-    let hash = this.data;
-    let checkbox = document.getElementById(hash);
-    e.preventDefault();
-    e.stopPropagation();
-
-    let visibility = map.getLayoutProperty(hash, 'visibility');
-
-    if (visibility === 'visible') {
-        map.setLayoutProperty(hash, 'visibility', 'none');
-        checkbox.checked = '';
-    } else {
-        checkbox.checked = 'active';
-        map.setLayoutProperty(hash, 'visibility', 'visible');
-    }
+function toggleType(type) {
+  let checkbox = document.getElementById('toggleType' + type);
+  if (checkbox.checked == true) {
+    checkbox.checked = false;
+  } else {
+    checkbox.checked = true;
+  }
+  applyFilterFromChecboxes();
 }
 
-function toggleAllLayers(e) {
-    let status = this.data
-    e.preventDefault();
-    e.stopPropagation();
-    for (let i in layers) {
-        let hash = layers[i].hash;
-        let checkbox = document.getElementById(hash);
-
-
-        if (status == 'all') {
-            this.data = 'none';
-            checkbox.checked = '';
-            map.setLayoutProperty(hash, 'visibility', 'none');
-
-        } else {
-            this.data = 'all';
-            checkbox.checked = 'checked';
-            map.setLayoutProperty(hash, 'visibility', 'visible');
-        }
+function applyFilterFromChecboxes() {
+  let hidden = ['all']
+  let checkboxes = document.querySelectorAll('input');
+  for (let i in checkboxes) {
+    let checkbox = checkboxes[i];
+    if (checkbox.checked == false) {
+      hidden.push(['!=', checkbox.getAttribute("toggles"), checkbox.getAttribute("data")]);
     }
+    // zaaplikuj filtr w ostatniej iteracji
+    if (i == (checkboxes.length - 1)) map.setFilter('nadajniki', hidden);
+  };
+}
+
+function toggleAllFilters(e) {
+  let category = this.category || /.*/;
+  let status = this.data
+  let checkboxes = document.querySelectorAll('input');
+
+  console.log(category)
+
+  checkboxes.forEach((checkbox) => {
+    if (checkbox.id.match(category)) {
+      if (status == 'none') {
+        this.data = 'all';
+        checkbox.checked = true;
+      } else {
+        this.data = 'none';
+        checkbox.checked = false;
+      }
+    }
+  });
+  applyFilterFromChecboxes()
 }
 
 function clearPopUps() {
-    for (let i in window.popups) {
-        window.popups[i].remove();
-    }
+  for (let i in window.popups) {
+    window.popups[i].remove();
+  }
 }
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js');
+function detailsLegend() {
+
+  details.innerHTML = "Kliknij na mapę lub przybliż aby wyświelić więcej informacji."
+
+  let legend = document.createElement('ul');
+  legend.className = 'collection';
+  details.appendChild(legend);
+
+  for (let i in types) {
+    let type = types[i];
+    let legendOfType = document.createElement('li');
+    legendOfType.className = 'collection-item avatar'
+    legendOfType.innerHTML = `<div style="background-color: ${type.color}" class="circle"></div><span class="title">Typ ${i}: ${type.name} </span><p>${type.description}</p>`
+    legend.appendChild(legendOfType);
+  }
+}
+
+function addLayerFromHash(map, hash) {
+  map.addLayer({
+    id: hash,
+    type: "circle",
+    source: {
+      type: "geojson",
+      data: `./data/${hash}.geojson?t=${sources.generated}`
+    },
+    paint: paint
+  });
+  map.on('click', hash, (e) => {
+    loadDetails(e.features[0].properties.id);
+  });
+
+  map.on('mouseenter', hash, function () {
+    map.getCanvas().style.cursor = 'pointer';
+  });
+
+  map.on('mouseleave', hash, function () {
+    map.getCanvas().style.cursor = '';
   });
 }

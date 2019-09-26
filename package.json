@@ -24,6 +24,8 @@
     "webpack-dev-server": "^3.8.1"
   },
   "dependencies": {
+    "@mapbox/mapbox-sdk": "^0.7.0",
+    "aws-sdk": "^2.536.0",
     "css-loader": "^3.2.0",
     "file-loader": "^4.2.0",
     "google-analytics-webpack-plugin": "^1.0.2",

@@ -2,13 +2,10 @@ const APIkey = process.env.MAPBOX_UPLOAD_KEY
 const APIuser = process.env.MAPBOX_USER
 
 const sources = require("./src/sources.json");
-
 const AWS = require('aws-sdk');
 const mbxUploads = require('@mapbox/mapbox-sdk/services/uploads');
 const fs = require('fs');
-const uploadsClient = mbxUploads({
-    accessToken: APIkey
-});
+const uploadsClient = mbxUploads({ accessToken: APIkey });
 
 const date = new Date();
 
@@ -42,19 +39,18 @@ async function fireAndForget() {
 
     console.log("Processing...")
     await uploadsClient.createUpload({
-            mapId: `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth()}`,
-            url: credentials.url
-        })
-        .send().catch((e) => console.log(e)).then(response => {
-            console.log(response.body);
-            sources.uploadedTileset = response.body.tileset;
-            fs.writeFile('./src/sources.json', JSON.stringify(sources), 'utf8', function (err) {
-                if (err) {
-                    return console.log(err);
-                }
-            });
-            return response.body;
+        mapId: `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth()}`,
+        url: credentials.url
+    }).send().catch((e) => console.log(e)).then(response => {
+        console.log(response.body);
+        sources.uploadedTileset = response.body.tileset;
+        fs.writeFile('./src/sources.json', JSON.stringify(sources), 'utf8', function (err) {
+            if (err) {
+                return console.log(err);
+            }
         });
+        return response.body;
+    });
 }
 
 

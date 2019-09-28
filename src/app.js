@@ -73,12 +73,12 @@ const types = {
   },
   P: {
     name: "Bezprzewodowe poszukiwanie osób",
-    description: "Stacje radiowe systemu bezprzewodowego poszukiwania osób.",
+    description: "System stosowany np. w szpitalach.",
     color: "#04adff"
   },
   Q: {
     name: "Mikrofony bezprzewodowe",
-    description: "np. Technika estradowa.",
+    description: "Technika estradowa.",
     color: "#e48873"
   },
   R: {
@@ -118,12 +118,17 @@ const paint = {
   "circle-radius": [
     'interpolate', ['linear'],
     ['zoom'],
-    7, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 100], 4],
-    12, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 1000], 10]
+    7, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 100], 3],
+    20, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 1000], 16]
   ],
   "circle-stroke-width": 1,
   "circle-opacity": 0.8,
-  "circle-stroke-color": "#FFF"
+  "circle-stroke-color": ['match',
+    ['get', 'mapNetworkType'],
+    "B", '#555',
+    "D", '#555',
+    '#FFF'
+  ]
 }
 
 const map = new mapboxgl.Map({
@@ -187,9 +192,9 @@ document.addEventListener('DOMContentLoaded', function () {
     edge: 'right'
   });
   M.Sidenav.init(document.querySelector('#menu'));
-  
+
   // Wyświetl Disclaimer na pierwszym uruchomieniu strony.
-  if(!localStorage.getItem("disclaimer")) {
+  if (!localStorage.getItem("disclaimer")) {
     let modal = M.Modal.init(document.querySelector('.modal'));
     modal.open();
     localStorage.setItem("disclaimer", true);
@@ -251,7 +256,8 @@ function detailsLoad(id, mapInstance = map) {
   let details = document.querySelector('#details');
   let description = ''
   const feature = map.queryRenderedFeatures({
-    filter: ['==', 'id', id]
+    filter: ['==', 'id', id],
+    validate: false
   });
   const properties = feature[0].properties;
   const coordinates = [properties.lon, properties.lat];
@@ -262,7 +268,6 @@ function detailsLoad(id, mapInstance = map) {
     //let property = JSON.parse(properties[i]);
 
     if (i == 'networkType') {
-      console.log(property[0])
       description += `<b>${headers[i]}:</b> ${property}: ${types[property[0]].name}</br>`;
       continue
     }
@@ -281,15 +286,14 @@ function detailsLoad(id, mapInstance = map) {
     detailsLoadInView();
   });
 
-  /* 
-      mapInstance.flyTo({
-      center: coordinates,
-      offset: [(window.innerWidth  > 992) ? window.innerWidth  / 10 : 0, (window.innerWidth  < 992) ? -1 * window.innerHeight  / 4 : 0],
-      speed: 0.8,
-      zoom: 14,
-      bearing: 0
+  mapInstance.flyTo({
+    center: coordinates,
+    offset: [(window.innerWidth > 992) ? window.innerWidth / 10 : 0, (window.innerWidth < 992) ? -1 * window.innerHeight / 4 : 0],
+    speed: 0.8,
+    zoom: map.getZoom(),
+    bearing: 0
   });
-  */
+
 
   let popup = new mapboxgl.Popup()
     .setLngLat(coordinates)
@@ -301,12 +305,16 @@ function detailsLoad(id, mapInstance = map) {
 
 function detailsLoadInView() {
   let details = document.querySelector('#details');
-  let zoomTreshold = 12;
-  let features = map.queryRenderedFeatures();
-  let bounds = map.getBounds();
+  let features = map.queryRenderedFeatures({
+    filter: ['has', 'tx'],
+    validate: false
+  });
+  const zoomTreshold = 12;
+  const featuresTreshold = 100;
+
   //let bandplan = {};
 
-  if (details.data != 'details' && map.getZoom() > zoomTreshold) {
+  if (details.data != 'details' && (map.getZoom() > zoomTreshold || features.length < featuresTreshold)) {
     details.innerHTML = `Nadajniki w widoku. Oddal aby zobaczyć legendę.`;
     details.data = 'collection'
 
@@ -314,34 +322,29 @@ function detailsLoadInView() {
     collection.className = 'collection'
     details.appendChild(collection);
 
-
-
     for (let i in features) {
       let feature = features[i];
-      if (feature.properties.lat < bounds._ne.lat && feature.properties.lat > bounds._sw.lat && feature.properties.lon < bounds._ne.lng && feature.properties.lon > bounds._sw.lng) {
+      /* 
+      // Bandplan w danym widoku
+      let frequencies = feature.properties.tx.split(", ");
+       for (let j in frequencies) {
+           let frequency = frequencies[j];
+           bandplan[frequency] = bandplan[frequency] || {};
+           bandplan[frequency].op = feature.properties.op;
+           (bandplan[frequency].stations = bandplan[frequency].stations || []).push(feature.properties.name);
 
-        /* 
-         // Bandplan w danym widoku
-         let frequencies = feature.properties.tx.split(", ");
-          for (let j in frequencies) {
-              let frequency = frequencies[j];
-              bandplan[frequency] = bandplan[frequency] || {};
-              bandplan[frequency].op = feature.properties.op;
-              (bandplan[frequency].stations = bandplan[frequency].stations || []).push(feature.properties.name);
-
-          }*/
-        let element = document.createElement('li');
-        element.className = 'collection-item truncate';
-        element.onclick = function () {
-          detailsLoad(feature.properties.id)
-        };
-        element.innerHTML = `${feature.properties.mapOp }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.mapNetworkType].color}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.mapTx}</span>`;
-        collection.appendChild(element);
-      }
+       }*/
+      let element = document.createElement('li');
+      element.className = 'collection-item truncate';
+      element.onclick = function () {
+        detailsLoad(feature.properties.id)
+      };
+      element.innerHTML = `${feature.properties.mapOp }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.mapNetworkType].color}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.mapTx}</span>`;
+      collection.appendChild(element);
     }
     //console.log(bandplan);
   }
-  if (details.data != 'details' && map.getZoom() < zoomTreshold) detailsLegend();
+  if (details.data != 'details' && map.getZoom() < zoomTreshold && features.length > featuresTreshold) detailsLegend();
 }
 
 
@@ -382,8 +385,6 @@ function toggleAllFilters(e) {
   let category = this.category || /.*/;
   let status = this.data
   let checkboxes = document.querySelectorAll('input');
-
-  console.log(category)
 
   checkboxes.forEach((checkbox) => {
     if (checkbox.id.match(category)) {

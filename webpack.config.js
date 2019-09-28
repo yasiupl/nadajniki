@@ -57,8 +57,7 @@ module.exports = {
           new WorkboxPlugin.GenerateSW({
             runtimeCaching: [{
                 urlPattern: /.*/,
-                handler: 'NetworkFirst',}]
-            
+                handler: 'StaleWhileRevalidate',}]
           }),
           new GoogleAnalyticsPlugin({
               id: 'UA-71778687-18'

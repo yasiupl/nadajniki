@@ -5,7 +5,12 @@
   <title><%= htmlWebpackPlugin.options.title %></title>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="Description" content="Mapa nadajników RRL UKE.">
+    
+  <meta property="og:title" content="<%= htmlWebpackPlugin.options.title %>">
+  <meta property="og:description" content="Mapa nadajników z listy pozwoleń RRL UKE.">
+  <meta property="og:image" content="/icons/icon_512x512.png">
+  <meta property="og:url" content="https://nadajniki.yasiu.pl">
+  <meta name="twitter:card" content="summary_large_image">
 </head>
 
 <body>

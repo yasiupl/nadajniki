@@ -1,3 +1,7 @@
+
+$tabs-underline-color: #2196F3;
+$tabs-text-color: #2196F3;
+
 @import "~mapbox-gl/dist/mapbox-gl.css";
 @import "~materialize-css/sass/materialize.scss";
 
@@ -65,4 +69,16 @@ main {
     margin-bottom: calc(0.75rem - 11px);
 
   }
+}
+
+.bandplan {
+
+  .bandplan-entry {
+    display: unset;
+  }
+}
+
+.tab-container {
+  padding-top: 4px;
+  padding-bottom: 4px;
 }

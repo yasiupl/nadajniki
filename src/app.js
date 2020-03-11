@@ -374,9 +374,8 @@ function detailsLoadInView() {
   }
 
   var dropdownElements = document.querySelectorAll('.dropdown-trigger');
-  var mainElement = document.querySelector('main')
 
-  let dropdownInstance = M.Dropdown.init(dropdownElements, {constrainWidth: false});  
+  let dropdownInstance = M.Dropdown.init(dropdownElements, {constrainWidth: false, coverTrigger: false});  
     
   addDropdownButtonListeners();
 

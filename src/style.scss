@@ -48,6 +48,21 @@ main {
   }
 }
 
-.modal{
+.modal {
   z-index: 100;
+}
+
+.details-view-badges {
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: right;
+  padding-top: 4px;
+
+  span.badge {
+    min-width: 4.1rem;
+    margin-bottom: calc(0.75rem - 11px);
+
+  }
 }

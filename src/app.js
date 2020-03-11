@@ -308,7 +308,7 @@ function detailsLoadInView() {
   let features = map.queryRenderedFeatures({
     filter: ['has', 'tx'],
     validate: false
-  });
+  }).sort((a, b) => a.properties.mapOp.localeCompare(b.properties.mapOp));
   const zoomTreshold = 12;
   const featuresTreshold = 100;
 
@@ -339,7 +339,7 @@ function detailsLoadInView() {
       element.onclick = function () {
         detailsLoad(feature.properties.id)
       };
-      element.innerHTML = `${feature.properties.mapOp }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.mapNetworkType].color}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.mapTx}</span>`;
+      element.innerHTML = `${feature.properties.mapOp}${getBadgesForFrequencies(feature.properties)}`;
       collection.appendChild(element);
     }
     //console.log(bandplan);
@@ -347,6 +347,19 @@ function detailsLoadInView() {
   if (details.data != 'details' && map.getZoom() < zoomTreshold && features.length > featuresTreshold) detailsLegend();
 }
 
+function getBadgesForFrequencies(featureProps) {
+  const freqs = featureProps.mapTx.replace(/\s/g, "").split(",").sort();
+
+  const freqBadges = freqs.map(freq => {
+    if (freq === '-')
+      return;
+
+    return `<span class="badge new" data-badge-caption="" style="background-color:${types[featureProps.mapNetworkType].color}">${freq}</span>`
+  });
+
+  return `<div class="details-view-badges">${freqBadges.join('')}</div>`;
+
+}
 
 function toggleTag(tag) {
   let checkbox = document.getElementById('toggleTag' + tag);

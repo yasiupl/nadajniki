@@ -20,7 +20,7 @@
     "node-sass": "^4.12.0",
     "sass-loader": "^8.0.0",
     "webpack": "^4.40.2",
-    "webpack-cli": "^3.3.9",
+    "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.8.1"
   },
   "dependencies": {

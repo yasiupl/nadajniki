@@ -1,4 +1,4 @@
-const danegovplAPI = 'https://api.dane.gov.pl/resources/19111';
+const danegovplAPI = 'https://api.dane.gov.pl/media/resources/20200131/wykaz_pozwolen_rrl.zip;
 
 const request = require('request');
 const unzipper = require('unzipper');

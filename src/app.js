@@ -373,15 +373,17 @@ function detailsLoadInView() {
     tabInstance = M.Tabs.init(document.querySelector('.tabs'), {onShow: onTabShow})
   }
 
-    var elems = document.querySelectorAll('.dropdown-trigger');
-    var mainElement = document.querySelectorAll('main')
-    M.Dropdown.init(elems, {constrainWidth: false, container: mainElement});  
+  var dropdownElements = document.querySelectorAll('.dropdown-trigger');
+  var mainElement = document.querySelector('main')
+
+  let dropdownInstance = M.Dropdown.init(dropdownElements, {constrainWidth: false});  
     
-    addDropdownButtonListeners();
+  addDropdownButtonListeners();
 
 }
 
 function exportToSdrSharp() {
+
     let features = map.queryRenderedFeatures({
       filter: ['has', 'tx'],
       validate: false

@@ -61,11 +61,11 @@ main {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  justify-content: right;
+  justify-content: flex-end;
   padding-top: 4px;
 
   span.badge {
-    min-width: 63px;
+    min-width: 64px;
     margin-bottom: 1px;
     margin-top: 1px;
 

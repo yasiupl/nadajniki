@@ -11,6 +11,8 @@ if ('serviceWorker' in navigator) {
 
 mapboxgl.accessToken = 'pk.eyJ1IjoieWFzaXUiLCJhIjoiY2o4dWF2dmZnMHEwODMzcnB6NmZ5cGpicCJ9.XzC5pC59qPSmqbLv2xBDQw';
 
+var selectedTabIndex = 0;
+
 const layers = sources.layers;
 
 const headers = {
@@ -303,50 +305,130 @@ function detailsLoad(id, mapInstance = map) {
   (window.popups = window.popups || []).push(popup)
 }
 
+
 function detailsLoadInView() {
   let details = document.querySelector('#details');
   let features = map.queryRenderedFeatures({
     filter: ['has', 'tx'],
     validate: false
-  });
+  }).sort((a, b) => a.properties.mapOp.localeCompare(b.properties.mapOp));
   const zoomTreshold = 12;
   const featuresTreshold = 100;
 
-  //let bandplan = {};
-
   if (details.data != 'details' && (map.getZoom() > zoomTreshold || features.length < featuresTreshold)) {
-    details.innerHTML = `Nadajniki w widoku. Oddal aby zobaczyć legendę.`;
+    details.innerHTML = `
+    <ul class="tabs">
+      <li class="tab">
+        <a ${selectedTabIndex == 0 ? 'class="active"' : '' } href="#transmitter-tab">Nadajniki</a>
+      </li>
+      <li class="tab">
+        <a ${selectedTabIndex == 1 ? 'class="active"' : ''} href="#bandplan-tab">Częstotliwości</a>
+      </li>
+    </ul>`;
     details.data = 'collection'
 
+    let containerDiv = document.createElement('div')
+    containerDiv.id = "transmitter-tab"
+    containerDiv.className = "tab-container"
+    containerDiv.innerHTML = "Nadajniki w widoku. Oddal aby zobaczyć legendę."
+    details.appendChild(containerDiv);
+    
     let collection = document.createElement('ul');
-    collection.className = 'collection'
-    details.appendChild(collection);
+    collection.className = 'transmitters collection'
+    
+    containerDiv.appendChild(collection);
 
     for (let i in features) {
       let feature = features[i];
-      /* 
-      // Bandplan w danym widoku
-      let frequencies = feature.properties.tx.split(", ");
-       for (let j in frequencies) {
-           let frequency = frequencies[j];
-           bandplan[frequency] = bandplan[frequency] || {};
-           bandplan[frequency].op = feature.properties.op;
-           (bandplan[frequency].stations = bandplan[frequency].stations || []).push(feature.properties.name);
 
-       }*/
       let element = document.createElement('li');
       element.className = 'collection-item truncate';
       element.onclick = function () {
         detailsLoad(feature.properties.id)
       };
-      element.innerHTML = `${feature.properties.mapOp }<span class="badge new" data-badge-caption="" style="background-color:${types[feature.properties.mapNetworkType].color}">${(feature.properties.tx.match(',')) ? (feature.properties.tx.split(',').length + ' częstotliwości') : feature.properties.mapTx}</span>`;
+      element.innerHTML = `${feature.properties.mapOp}${getBadgesForFrequencies(feature.properties)}`;
       collection.appendChild(element);
     }
-    //console.log(bandplan);
   }
-  if (details.data != 'details' && map.getZoom() < zoomTreshold && features.length > featuresTreshold) detailsLegend();
+
+  if (details.data != 'details' && map.getZoom() < zoomTreshold && features.length > featuresTreshold) {
+    detailsLegend();
+    return;
+  }
+  
+  createBandplanView(details, features);
+
+  let tabInstance = M.Tabs.getInstance(document.querySelector('.tabs'))
+  if (!tabInstance) {
+    tabInstance = M.Tabs.init(document.querySelector('.tabs'), {onShow: onTabShow})
+  }
+
 }
 
+function onTabShow() {
+  let tabInstance = M.Tabs.getInstance(document.querySelector('.tabs'))
+
+  selectedTabIndex = tabInstance.index;
+}
+
+
+function createBandplanView(details, features) {
+
+  let containerDiv = document.createElement('div')
+  containerDiv.id = "bandplan-tab"
+  containerDiv.className = "tab-container"
+  containerDiv.innerHTML = "Częstotliwości w widoku. Oddal aby zobaczyć legendę."
+  details.appendChild(containerDiv);
+
+  let collection = document.createElement('ul');
+  collection.className = 'bandplan collection'
+  containerDiv.appendChild(collection);
+
+  let bandplan = [];
+
+  features.forEach(feature => {
+      const freqs = feature.properties.mapTx.replace(/\s/g, "").split(",")
+
+      freqs.forEach(freq => {
+        if (freq !== '-' && !bandplan.find(a => a.freq === freq && a.ownerName === a.ownerName)) {
+          bandplan.push({
+              freq: freq,
+              id: feature.properties.id,
+              ownerName: feature.properties.mapOp,
+              networkType: feature.properties.mapNetworkType
+          })
+        }
+      })
+  })
+
+   bandplan.sort((a, b) => a.freq - b.freq).forEach(band => {
+      let element = document.createElement('li');
+      element.className = 'collection-item bandplan-item truncate';
+
+      element.onclick = function () {
+        detailsLoad(band.id)
+      };
+      
+      element.innerHTML = `<div class='bandplan-entry'><span class="badge new" data-badge-caption=""
+        style="background-color:${types[band.networkType].color}">${band.freq}</span>
+        <span class='bandplan-entry-owner-name'>${band.ownerName}</span></div>`;
+      collection.appendChild(element);
+   });
+}
+
+function getBadgesForFrequencies(featureProps) {
+  const freqs = featureProps.mapTx.replace(/\s/g, "").split(",").sort();
+
+  const freqBadges = freqs.map(freq => {
+    if (freq === '-')
+      return;
+
+    return `<span class="badge new" data-badge-caption="" style="background-color:${types[featureProps.mapNetworkType].color}">${freq}</span>`
+  });
+
+  return `<div class="details-view-badges">${freqBadges.join('')}</div>`;
+
+}
 
 function toggleTag(tag) {
   let checkbox = document.getElementById('toggleTag' + tag);
@@ -355,7 +437,7 @@ function toggleTag(tag) {
   } else {
     checkbox.checked = true;
   }
-  applyFilterFromChecboxes();
+  applyFilterFromCheckboxes();
 }
 
 function toggleType(type) {
@@ -365,10 +447,10 @@ function toggleType(type) {
   } else {
     checkbox.checked = true;
   }
-  applyFilterFromChecboxes();
+  applyFilterFromCheckboxes();
 }
 
-function applyFilterFromChecboxes() {
+function applyFilterFromCheckboxes() {
   let hidden = ['all']
   let checkboxes = document.querySelectorAll('input');
   for (let i in checkboxes) {
@@ -397,7 +479,7 @@ function toggleAllFilters(e) {
       }
     }
   });
-  applyFilterFromChecboxes()
+  applyFilterFromCheckboxes()
 }
 
 function clearPopUps() {

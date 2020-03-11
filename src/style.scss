@@ -1,3 +1,7 @@
+
+$tabs-underline-color: #2196F3;
+$tabs-text-color: #2196F3;
+
 @import "~mapbox-gl/dist/mapbox-gl.css";
 @import "~materialize-css/sass/materialize.scss";
 
@@ -48,6 +52,34 @@ main {
   }
 }
 
-.modal{
+.modal {
   z-index: 100;
+}
+
+.details-view-badges {
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  padding-top: 4px;
+
+  span.badge {
+    min-width: 64px;
+    margin-bottom: 1px;
+    margin-top: 1px;
+
+  }
+}
+
+.bandplan {
+
+  .bandplan-entry {
+    display: unset;
+  }
+}
+
+.tab-container {
+  padding-top: 4px;
+  padding-bottom: 4px;
 }

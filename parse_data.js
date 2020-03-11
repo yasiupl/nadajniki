@@ -68,7 +68,7 @@ function processData(json) {
 
     const tags = {
         "single": {
-            name: "Pojedyńcze",
+            name: "Pojedyncze",
             length: 0
         },
         "small": {
@@ -126,7 +126,7 @@ function processData(json) {
             length: 0
         },
         "transportation": {
-            name: "Taxi,Komunikacja Miejska",
+            name: "Taxi, Komunikacja Miejska",
             match: /\bkomunikacja|\bkomunikacji|\bkomunikacyj|\btramwaj|\bautobus|\btaxi|\btaksówk|\btransport|\bprzewoźnik|\bprzewóz osób/,
             length: 0
         },

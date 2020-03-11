@@ -83,3 +83,20 @@ main {
   padding-top: 4px;
   padding-bottom: 4px;
 }
+
+.tab-menu {
+
+  display: flex;
+  justify-content: space-between;
+
+  .tabs {
+    margin-left: 0px;
+    margin-right: 0px;
+    width: 80%;
+  }
+
+  .dropdown-trigger {
+    margin-top: 11px;
+  }
+
+}

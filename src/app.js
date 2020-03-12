@@ -3,7 +3,7 @@ import mapboxgl from 'mapbox-gl'
 import sources from './sources.json'
 import './style.scss'
 
-var xml2js = require('xml2js');
+const xml2js = require('xml2js');
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -407,13 +407,13 @@ function exportToSdrSharp() {
     })
 
   let builder = new xml2js.Builder();
-  var xml = builder.buildObject(exportedData);
+  let xml = builder.buildObject(exportedData);
 
   downloadFile('frequencies.xml', xml);
 }
 
 function downloadFile(filename, text) {
-  var element = document.createElement('a');
+  let element = document.createElement('a');
   element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
   element.setAttribute('download', filename);
 

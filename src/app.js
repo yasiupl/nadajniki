@@ -3,6 +3,8 @@ import mapboxgl from 'mapbox-gl'
 import sources from './sources.json'
 import './style.scss'
 
+const xml2js = require('xml2js');
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js');
@@ -317,14 +319,22 @@ function detailsLoadInView() {
 
   if (details.data != 'details' && (map.getZoom() > zoomTreshold || features.length < featuresTreshold)) {
     details.innerHTML = `
-    <ul class="tabs">
-      <li class="tab">
-        <a ${selectedTabIndex == 0 ? 'class="active"' : '' } href="#transmitter-tab">Nadajniki</a>
-      </li>
-      <li class="tab">
-        <a ${selectedTabIndex == 1 ? 'class="active"' : ''} href="#bandplan-tab">Częstotliwości</a>
-      </li>
-    </ul>`;
+    <div class="tab-menu">
+      <ul class="tabs">
+        <li class="tab">
+          <a ${selectedTabIndex == 0 ? 'class="active"' : '' } href="#transmitter-tab">Nadajniki</a>
+        </li>
+        <li class="tab">
+          <a ${selectedTabIndex == 1 ? 'class="active"' : ''} href="#bandplan-tab">Częstotliwości</a>
+        </li>
+      </ul>
+      <a class='dropdown-trigger' href='#' data-target='actions-dropdown'><i class="material-icons">more_vert</i></a>
+      <ul id="actions-dropdown" class="dropdown-content" />
+        <li>
+          <a id="details-export-to-sdr-sharp">Eksportuj widoczne do SDR#</a>
+        </li>
+      </ul>
+    </div>`;
     details.data = 'collection'
 
     let containerDiv = document.createElement('div')
@@ -363,6 +373,62 @@ function detailsLoadInView() {
     tabInstance = M.Tabs.init(document.querySelector('.tabs'), {onShow: onTabShow})
   }
 
+  var dropdownElements = document.querySelectorAll('.dropdown-trigger');
+
+  let dropdownInstance = M.Dropdown.init(dropdownElements, {constrainWidth: false, coverTrigger: false});  
+    
+  addDropdownButtonListeners();
+
+}
+
+function exportToSdrSharp() {
+
+    let features = map.queryRenderedFeatures({
+      filter: ['has', 'tx'],
+      validate: false
+    }).sort((a, b) => a.properties.mapOp.localeCompare(b.properties.mapOp));
+
+    let bandplan = getBandplanFromFeatures(features);
+    let exportedData = {ArrayOfMemoryEntry: []};
+
+    bandplan.forEach(band => {
+      exportedData.ArrayOfMemoryEntry.push({
+          MemoryEntry: 
+          {
+            IsFavourite: false,
+            Name: band.ownerName,
+            GroupName: `#${types[band.networkType].name}`,
+            Frequency: `${band.freq.replace('.', '')}0`,
+            DetectorType: `NFM`,
+            Shift: 0,
+            FilterBandwidth: 12500
+          }
+      })
+    })
+
+  let builder = new xml2js.Builder();
+  let xml = builder.buildObject(exportedData);
+
+  downloadFile('frequencies.xml', xml);
+}
+
+function downloadFile(filename, text) {
+  let element = document.createElement('a');
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+  element.setAttribute('download', filename);
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
+}
+
+function addDropdownButtonListeners()
+{
+  let exportToSdrSharpElement = document.querySelector('#details-export-to-sdr-sharp');
+  exportToSdrSharpElement.addEventListener('click', exportToSdrSharp);
 }
 
 function onTabShow() {
@@ -371,19 +437,8 @@ function onTabShow() {
   selectedTabIndex = tabInstance.index;
 }
 
-
-function createBandplanView(details, features) {
-
-  let containerDiv = document.createElement('div')
-  containerDiv.id = "bandplan-tab"
-  containerDiv.className = "tab-container"
-  containerDiv.innerHTML = "Częstotliwości w widoku. Oddal aby zobaczyć legendę."
-  details.appendChild(containerDiv);
-
-  let collection = document.createElement('ul');
-  collection.className = 'bandplan collection'
-  containerDiv.appendChild(collection);
-
+function getBandplanFromFeatures(features)
+{
   let bandplan = [];
 
   features.forEach(feature => {
@@ -400,8 +455,25 @@ function createBandplanView(details, features) {
         }
       })
   })
+  
+  return bandplan.sort((a, b) => a.freq - b.freq);
+}
 
-   bandplan.sort((a, b) => a.freq - b.freq).forEach(band => {
+function createBandplanView(details, features) {
+
+  let containerDiv = document.createElement('div')
+  containerDiv.id = "bandplan-tab"
+  containerDiv.className = "tab-container"
+  containerDiv.innerHTML = "Częstotliwości w widoku. Oddal aby zobaczyć legendę."
+  details.appendChild(containerDiv);
+
+  let collection = document.createElement('ul');
+  collection.className = 'bandplan collection'
+  containerDiv.appendChild(collection);
+
+  let bandplan = getBandplanFromFeatures(features);
+
+  bandplan.forEach(band => {
       let element = document.createElement('li');
       element.className = 'collection-item bandplan-item truncate';
 
@@ -413,7 +485,7 @@ function createBandplanView(details, features) {
         style="background-color:${types[band.networkType].color}">${band.freq}</span>
         <span class='bandplan-entry-owner-name'>${band.ownerName}</span></div>`;
       collection.appendChild(element);
-   });
+  });
 }
 
 function getBadgesForFrequencies(featureProps) {

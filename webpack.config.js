@@ -2,7 +2,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const WebpackPwaManifest = require('webpack-pwa-manifest');
 const WorkboxPlugin = require('workbox-webpack-plugin');
-const GoogleAnalyticsPlugin = require('google-analytics-webpack-plugin')
+const GoogleTagManagerPlugin = require('webpack-google-tag-manager-plugin');
 const path = require('path');
 
 module.exports = {
@@ -59,9 +59,9 @@ module.exports = {
                 urlPattern: /.*/,
                 handler: 'StaleWhileRevalidate',}]
           }),
-          new GoogleAnalyticsPlugin({
-              id: 'UA-71778687-18'
-          })
+          new GoogleTagManagerPlugin({
+            id: 'GTM-W68NNV7',
+        }),
     ],
     module: {
         rules: [

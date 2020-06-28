@@ -2,6 +2,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const WebpackPwaManifest = require('webpack-pwa-manifest');
 const WorkboxPlugin = require('workbox-webpack-plugin');
+const GoogleTagManagerPlugin = require('webpack-google-tag-manager-plugin');
 const path = require('path');
 
 module.exports = {
@@ -57,6 +58,10 @@ module.exports = {
             runtimeCaching: [{
                 urlPattern: /.*/,
                 handler: 'StaleWhileRevalidate',}]
+          }),
+          new GoogleTagManagerPlugin({
+              id: 'GTM-N79X7MS',
+              dataLayerName: 'dataLayer',
           }),
     ],
     module: {

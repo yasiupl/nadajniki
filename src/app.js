@@ -575,6 +575,8 @@ function detailsLegend() {
     legendOfType.innerHTML = `<div style="background-color: ${type.color}" class="circle"></div><span class="title">Typ ${i}: ${type.name} </span><p>${type.description}</p>`
     legend.appendChild(legendOfType);
   }
+
+  details.innerHTML += `Ostatnia aktualizacja: ${(new Date(sources.generated)).toISOString().split("T")[0]}`;
 }
 
 function addLayerFromHash(map, hash) {

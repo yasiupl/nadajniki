@@ -18,18 +18,18 @@
   "homepage": "https://github.com/yasiupl/nadajniki#readme",
   "devDependencies": {
     "html-webpack-plugin": "^4.2.0",
-    "node-sass": "^4.13.1",
+    "node-sass": "^4.14.1",
     "sass-loader": "^8.0.2",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",
-    "webpack-dev-server": "^3.10.3"
+    "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
     "@mapbox/mapbox-sdk": "^0.7.1",
     "aws-sdk": "^2.656.0",
     "css-loader": "^3.5.2",
     "file-loader": "^4.3.0",
-    "mapbox-gl": "^1.9.1",
+    "mapbox-gl": "^1.11.0",
     "materialize-css": "^1.0.0",
     "mini-css-extract-plugin": "^0.8.2",
     "request": "^2.88.2",

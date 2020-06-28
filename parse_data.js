@@ -286,8 +286,6 @@ function processData(json) {
 
     console.log(sources.tags);
 
-    sources.buildTime = Date.now();
-
     saveToFile(JSON.stringify(sources), './src/', 'sources.json');
 
     parseGeoJSON('all', points);

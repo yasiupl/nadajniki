@@ -4,3 +4,8 @@
 
 [build.environment]
   NODE_OPTIONS = "--max_old_space_size=4096"
+
+[redirects]
+  from = "//xn--xu8h.y4s.io/*"
+  to = "//nadajniki.yasiu.pl/:splat"
+  status = 302

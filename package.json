@@ -18,7 +18,7 @@
   "homepage": "https://github.com/yasiupl/nadajniki#readme",
   "devDependencies": {
     "html-webpack-plugin": "^4.2.0",
-    "node-sass": "^4.14.1",
+    "node-sass": "^7.0.0",
     "sass-loader": "^8.0.2",
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",

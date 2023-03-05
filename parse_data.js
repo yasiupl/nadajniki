@@ -1,7 +1,3 @@
-const danegovplAPI = 'https://api.dane.gov.pl/resources/21633';
-
-const request = require('request');
-const unzipper = require('unzipper');
 const path = require('path');
 const fs = require('fs');
 const xlsx = require('xlsx-extractor');
@@ -20,7 +16,7 @@ function parseFiles() {
                 })
                 .catch((err) => console.log(err));
         }
-        processData(json)
+        processData(json);
     });
 
 }
@@ -343,23 +339,4 @@ function parseLatLon(coordinate = '') {
     return (Number.parseFloat((parseInt(coordinate[0]) + parseInt(coordinate[1]) / 60 + parseInt(coordinate[2]) / 3600).toFixed(6)) * sign) || 0;
 }
 
-function searchAndDestroy() {
-    // Download and unzip 
-    if (fs.existsSync('data')) {
-        parseFiles()
-    } else {
-        console.log("Pobieram dane z " + danegovplAPI);
-        request({
-            url: danegovplAPI,
-            json: true
-        }, function (error, response, body) {
-            const source = body.data.attributes.file_url;
-            console.log("Pobieram dane z " + source);
-            request(source).pipe(unzipper.Extract({
-                path: path.resolve(__dirname, 'data')
-            })).on('finish', parseFiles);
-        });
-    }
-}
-
-searchAndDestroy();
+parseFiles()

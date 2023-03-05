@@ -11,8 +11,7 @@ build-data:
 	rm -rf ./dist/data/
 	mkdir -p ./dist/data/
 	mkdir -p data
-	chmod +X fetch_data.sh
-	cd data && ../fetch_data.sh
+	cd data && bash ../fetch_data.sh
 	node parse_data.js
 
 upload-data:

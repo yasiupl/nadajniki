@@ -1,4 +1,4 @@
-const danegovplAPI = 'https://api.dane.gov.pl/resources/21633';
+const danegovplAPI = 'https://api.dane.gov.pl/resources/37115';
 
 const request = require('request');
 const unzipper = require('unzipper');

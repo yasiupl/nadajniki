@@ -15,7 +15,6 @@ jobs:
         uses: nwtgck/actions-netlify@v2.0
         with:
           publish-dir: './dist'
-          netlify-config-path: './netlify.toml'
           production-branch: master
           deploy-message: "Deployed from GitHub Actions"
         env:

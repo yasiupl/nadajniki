@@ -1,19 +1,16 @@
-name: Publish on Netlify
+name: 'Miesięczna aktualizacja danych'
 
 on:
   schedule:
     # Run montly at 26th
     - cron: '0 0 26 * *'
 
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-
+jobs:       
+  deploy:
+    name: 'Deploy to Netlify'
     steps:
-    - uses: actions/checkout@master
-
-    - name: Publish
-      uses: netlify/actions/build@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      - uses: jsmrcaga/action-netlify-deploy@v2.0.0
+        with:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_DEPLOY_TO_PROD: true

@@ -1,5 +1,6 @@
 name: 'Miesięczna aktualizacja danych'
 on:
+  workflow_dispatch:
   schedule:
     # Run montly at 26th
     - cron: '0 0 26 * *'

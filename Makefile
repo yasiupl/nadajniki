@@ -1,8 +1,8 @@
 deploy: install download-data build-data upload-data build 
 
 install:
-	nvm install 14
-	nvm use 14
+	# nvm install 14
+	# nvm use 14
 	npm install
 
 serve: 

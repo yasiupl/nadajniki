@@ -34,6 +34,10 @@ function parseToJSON(sheets, json) {
             row = sheet.cells[j];
 
             let propertiesSlugs = ['permitID', 'permitExpiry', 'name', 'stationType', 'networkType', 'lon', 'lat', 'radius', 'location', 'erp', 'azimuth', 'elevation', 'polarization', 'gain', 'antennaHeight', 'groundHeight', 'horizontalCharacteristic', 'verticalCharacteristic', 'tx', 'rx', 'txSpan', 'rxSpan', 'op', 'opAdress'];
+            
+            // fix Excel date
+            row[1] = (new Date(( parseInt(row[1]) - (25567 + 2))*86400*1000)).toISOString().split("T")[0]
+            
             let op = row[22].toLowerCase();
             let tower = (row[5] + row[6]).split(/N|S|W|E|'|"/).join('');
             //agregate points in the same place, owned by the same company
@@ -63,6 +67,10 @@ function processData(json) {
     let points = []
 
     const tags = {
+        "new": {
+            name: "Nowe",
+            length: 0
+        },
         "single": {
             name: "Pojedyncze",
             length: 0
@@ -262,6 +270,21 @@ function processData(json) {
                 tower.tags.push("single");
                 tags["single"].length++
             }
+            
+            let today = new Date()
+            today.setMonth(today.getMonth() - 2);
+            const permitYears = 10;
+            for(expiry of tower.permitExpiry) {
+                registryDate = new Date(expiry);
+                registryDate.setFullYear(registryDate.getFullYear() - permitYears);
+                if(registryDate >= today) {
+                    tower.tags.push("new");
+                    tags["new"].length++
+                    console.log(`Nowy nadajnik! ${registryDate.toISOString()}: ${tower.name[0]}`);
+                    break
+                }
+            }
+
             points.push(tower);
         }
     }

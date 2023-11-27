@@ -278,7 +278,7 @@ function processData(json) {
                 registryDate = new Date(expiry);
                 registryDate.setFullYear(registryDate.getFullYear() - permitYears);
                 if(registryDate >= today) {
-                    tower.tags.push("new");
+                    tower.tags.unshift("new");
                     tags["new"].length++
                     console.log(`Nowy nadajnik! ${registryDate.toISOString()}: ${tower.name[0]}`);
                     break

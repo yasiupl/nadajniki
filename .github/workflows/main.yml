@@ -4,6 +4,8 @@ on:
   schedule:
     # Run montly at 26th
     - cron: '0 0 26 * *'
+    # Run two days later, in case 26th is on weekend.
+    - cron: '0 0 28 * *'
 jobs:
   build:
     name: Request Netlify Webhook

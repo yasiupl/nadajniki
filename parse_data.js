@@ -10,6 +10,7 @@ function parseFiles() {
 
     fs.readdir(path.join(__dirname, 'data'), async function (err, files) {
         for (const file of files) {
+            if (!file.endsWith('.xlsx')) continue;
             await xlsx.extractAll('./data/' + file)
                 .then((sheets) => {
                     json = parseToJSON(sheets, json);

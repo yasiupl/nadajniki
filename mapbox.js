@@ -1,5 +1,5 @@
 const APIkey = process.env.MAPBOX_UPLOAD_KEY
-const APIuser = process.env.MAPBOX_USER
+const APIuser = process.env.MAPBOX_USER || "yasiu"
 const BRANCH = process.env.BRANCH || "testing"
 
 const sources = require("./src/sources.json");
@@ -14,7 +14,11 @@ const getCredentials = () => {
     return uploadsClient
         .createUploadCredentials()
         .send()
-        .then(response => response.body);
+        .then(response => response.body)
+        .catch(error => {
+            console.error("Error getting credentials:", error);
+            throw error;
+        });
 }
 
 const putFileOnS3 = (credentials) => {
@@ -36,7 +40,12 @@ async function fireAndForget() {
     const credentials = await getCredentials();
 
     console.log("Uploading to S3...")
-    await putFileOnS3(credentials).catch((e) => console.log(e));
+    try {
+        await putFileOnS3(credentials);
+    } catch (e) {
+        console.log("Error uploading to S3:", e);
+        return;
+    }
 
     console.log("Processing...")
     await uploadsClient.createUpload({

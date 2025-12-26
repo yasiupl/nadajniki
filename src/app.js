@@ -164,7 +164,7 @@ map.on('load', function () {
         type: 'vector',
         url: `mapbox://${sources.uploadedTileset}`
       },
-      'source-layer': "original",
+      'source-layer': sources.uploadedTileset,
       paint: paint
     });
 

@@ -1,5 +1,6 @@
 const APIkey = process.env.MAPBOX_UPLOAD_KEY
-const APIuser = process.env.MAPBOX_USER
+const APIuser = process.env.MAPBOX_USER || "yasiu"
+const COMMIT = process.env.COMMIT_REF || "testing"
 
 const sources = require("./src/sources.json");
 const AWS = require('aws-sdk');
@@ -13,7 +14,11 @@ const getCredentials = () => {
     return uploadsClient
         .createUploadCredentials()
         .send()
-        .then(response => response.body);
+        .then(response => response.body)
+        .catch(error => {
+            console.error("Error getting credentials:", error);
+            throw error;
+        });
 }
 
 const putFileOnS3 = (credentials) => {
@@ -35,12 +40,22 @@ async function fireAndForget() {
     const credentials = await getCredentials();
 
     console.log("Uploading to S3...")
-    await putFileOnS3(credentials).catch((e) => console.log(e));
+    try {
+        await putFileOnS3(credentials);
+    } catch (e) {
+        console.log("Error uploading to S3:", e);
+        return;
+    }
 
     console.log("Processing...")
+    const shortCommit = COMMIT.slice(0, 8);
+    const name = `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth() + 1}_${shortCommit}`;
+    console.log("Tileset name:", name);
+
     await uploadsClient.createUpload({
-        mapId: `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth()}`,
-        url: credentials.url
+        tileset: name,
+        url: credentials.url,
+        name: name
     }).send().catch((e) => console.log(e)).then(response => {
         console.log(response.body);
         sources.uploadedTileset = response.body.tileset;

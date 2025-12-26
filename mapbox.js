@@ -48,7 +48,7 @@ async function fireAndForget() {
     }
 
     console.log("Processing...")
-    const name = `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth()}_${BRANCH}`;
+    const name = `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth()}-${BRANCH}`;
     console.log("Tileset name:", name);
 
     await uploadsClient.createUpload({

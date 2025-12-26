@@ -2,7 +2,6 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const WebpackPwaManifest = require('webpack-pwa-manifest');
 const WorkboxPlugin = require('workbox-webpack-plugin');
-const GoogleTagManagerPlugin = require('webpack-google-tag-manager-plugin');
 const path = require('path');
 
 module.exports = {
@@ -11,8 +10,16 @@ module.exports = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js'
     },
+    resolve: {
+        fallback: {
+            "stream": require.resolve("stream-browserify"),
+            "timers": require.resolve("timers-browserify")
+        }
+    },
     devServer: {
-        contentBase: path.join(__dirname, 'dist'),
+        static: {
+            directory: path.join(__dirname, 'dist'),
+        },
         compress: true,
         port: 9000
     },
@@ -58,10 +65,6 @@ module.exports = {
             runtimeCaching: [{
                 urlPattern: /.*/,
                 handler: 'StaleWhileRevalidate',}]
-          }),
-          new GoogleTagManagerPlugin({
-              id: 'GTM-N79X7MS',
-              dataLayerName: 'dataLayer',
           }),
     ],
     module: {

@@ -11,6 +11,12 @@ module.exports = {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js'
     },
+    resolve: {
+        fallback: {
+            "stream": require.resolve("stream-browserify"),
+            "timers": require.resolve("timers-browserify")
+        }
+    },
     devServer: {
         static: {
             directory: path.join(__dirname, 'dist'),

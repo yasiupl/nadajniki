@@ -20,6 +20,8 @@
     "html-webpack-plugin": "^5.6.5",
     "sass": "^1.70.0",
     "sass-loader": "^16.0.0",
+    "stream-browserify": "^3.0.0",
+    "timers-browserify": "^2.0.12",
     "webpack": "^5.98.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.2.2"

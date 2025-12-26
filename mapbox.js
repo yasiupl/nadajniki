@@ -1,6 +1,6 @@
 const APIkey = process.env.MAPBOX_UPLOAD_KEY
 const APIuser = process.env.MAPBOX_USER || "yasiu"
-const BRANCH = process.env.BRANCH || "testing"
+const BRANCH = process.env.COMMIT_REF || "testing"
 
 const sources = require("./src/sources.json");
 const AWS = require('aws-sdk');

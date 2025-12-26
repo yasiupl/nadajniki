@@ -48,9 +48,13 @@ async function fireAndForget() {
     }
 
     console.log("Processing...")
+    const name = `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth()}_${BRANCH}`;
+    console.log("Tileset name:", name);
+
     await uploadsClient.createUpload({
-        mapId: `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth()}_${BRANCH}`,
-        url: credentials.url
+        tileset: name,
+        url: credentials.url,
+        name: name
     }).send().catch((e) => console.log(e)).then(response => {
         console.log(response.body);
         sources.uploadedTileset = response.body.tileset;

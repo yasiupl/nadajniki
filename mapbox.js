@@ -1,6 +1,6 @@
 const APIkey = process.env.MAPBOX_UPLOAD_KEY
 const APIuser = process.env.MAPBOX_USER || "yasiu"
-const BRANCH = process.env.COMMIT_REF || "testing"
+const COMMIT = process.env.COMMIT_REF || "testing"
 
 const sources = require("./src/sources.json");
 const AWS = require('aws-sdk');
@@ -48,10 +48,12 @@ async function fireAndForget() {
     }
 
     console.log("Processing...")
-    const name = `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth()}_${BRANCH}`;
+    const shortCommit = COMMIT.slice(0, 8);
+    const name = `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth() + 1}_${shortCommit}`;
     console.log("Tileset name:", name);
 
     await uploadsClient.createUpload({
+        tileset: name,
         url: credentials.url,
         name: name
     }).send().catch((e) => console.log(e)).then(response => {

@@ -1,5 +1,6 @@
 const APIkey = process.env.MAPBOX_UPLOAD_KEY
 const APIuser = process.env.MAPBOX_USER
+const BRANCH = process.env.BRANCH || "testing"
 
 const sources = require("./src/sources.json");
 const AWS = require('aws-sdk');
@@ -39,7 +40,7 @@ async function fireAndForget() {
 
     console.log("Processing...")
     await uploadsClient.createUpload({
-        mapId: `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth()}`,
+        mapId: `${APIuser}.nadajniki-${date.getFullYear()}-${date.getMonth()}_${BRANCH}`,
         url: credentials.url
     }).send().catch((e) => console.log(e)).then(response => {
         console.log(response.body);

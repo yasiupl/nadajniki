@@ -52,7 +52,6 @@ async function fireAndForget() {
     console.log("Tileset name:", name);
 
     await uploadsClient.createUpload({
-        tileset: name,
         url: credentials.url,
         name: name
     }).send().catch((e) => console.log(e)).then(response => {

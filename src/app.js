@@ -96,8 +96,8 @@ const types = {
     color: "#f44546"
   },
   L: {
-    name: "Nieznane",
-    description: "Nowy typ UKE.",
+    name: "Samorządowe",
+    description: "Nowy typ UKE, nieudokumentowany w legendzie.",
     color: "#666"
   }
 }

@@ -1,4 +1,4 @@
-import { triggerDeployHook } from '../lib/deploy-hook.mjs'
+import { runScheduledDeploy } from '../lib/deploy-hook.mjs'
 
 // Vercel Cron (patrz vercel.json). Vercel dołącza nagłówek
 // "Authorization: Bearer $CRON_SECRET", więc odrzucamy inne wywołania.
@@ -11,5 +11,5 @@ export async function GET(request) {
         return new Response('Unauthorized', { status: 401 })
     }
 
-    return triggerDeployHook()
+    return runScheduledDeploy()
 }

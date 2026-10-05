@@ -29,7 +29,9 @@ Zmienne środowiskowe:
 | --- | --- |
 | `MAPBOX_UPLOAD_KEY` | Token Mapbox z uprawnieniem `uploads:write`. |
 | `MAPBOX_USER` | Nazwa użytkownika Mapbox. Wartość domyślna: `yasiu`. |
-| `DEPLOY_HOOK_URL` | Adres deploy hooka. Funkcja cykliczna wywołuje ten adres 26. dnia każdego miesiąca. |
+| `DEPLOY_HOOK_URL` | Adres deploy hooka. Funkcja cykliczna wywołuje ten adres w dniu przebudowy. |
 | `CRON_SECRET` | Tylko Vercel. Vercel wysyła tę wartość w nagłówku `Authorization`. Funkcja odrzuca wywołania bez tej wartości. |
+
+Dzień przebudowy to 26. dzień miesiąca. Jeśli 26. dzień miesiąca nie jest dniem roboczym, dzień przebudowy to następny dzień roboczy. Funkcja uwzględnia soboty, niedziele i ustawowe dni wolne od pracy w Polsce. Cron uruchamia funkcję codziennie od 26. do 29. dnia miesiąca. Funkcja wywołuje deploy hook tylko w dniu przebudowy.
 
 Workflow GitHub Actions `.github/workflows/main.yml` pozwala ręcznie wywołać deploy hook. Workflow używa sekretu repozytorium `DEPLOY_HOOK_URL`.

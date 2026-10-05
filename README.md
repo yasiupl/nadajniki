@@ -13,3 +13,23 @@ https://dane.gov.pl/dataset/1070
 
 Legenda:
 https://archiwum.uke.gov.pl/files/?id_plik=6730
+
+## Wdrożenie
+
+Projekt działa na Vercel i na Netlify. Polecenie `npm run build` pobiera dane UKE, przetwarza je, wysyła tileset do Mapbox i buduje stronę do katalogu `dist/`.
+
+Konfiguracja platform:
+
+- Vercel: plik `vercel.json` i funkcja `api/scheduled-deploy.mjs` (Vercel Cron).
+- Netlify: plik `netlify.toml` i funkcja `netlify/functions/scheduled-deploy.mjs` (Scheduled Function).
+
+Zmienne środowiskowe:
+
+| Zmienna | Opis |
+| --- | --- |
+| `MAPBOX_UPLOAD_KEY` | Token Mapbox z uprawnieniem `uploads:write`. |
+| `MAPBOX_USER` | Nazwa użytkownika Mapbox. Wartość domyślna: `yasiu`. |
+| `DEPLOY_HOOK_URL` | Adres deploy hooka. Funkcja cykliczna wywołuje ten adres 26. dnia każdego miesiąca. |
+| `CRON_SECRET` | Tylko Vercel. Vercel wysyła tę wartość w nagłówku `Authorization`. Funkcja odrzuca wywołania bez tej wartości. |
+
+Workflow GitHub Actions `.github/workflows/main.yml` wywołuje deploy hook 26. i 28. dnia miesiąca. Workflow używa sekretu repozytorium `DEPLOY_HOOK_URL`.

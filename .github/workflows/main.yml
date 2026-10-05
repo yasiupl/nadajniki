@@ -8,8 +8,8 @@ on:
     - cron: '0 0 28 * *'
 jobs:
   build:
-    name: Request Netlify Webhook
+    name: Request deploy hook
     runs-on: ubuntu-latest
     steps:
       - name: Curl request
-        run: curl -X POST -d {} ${{ secrets.NETLIFY_BUILD_HOOK }}
+        run: curl -X POST -d {} ${{ secrets.DEPLOY_HOOK_URL }}

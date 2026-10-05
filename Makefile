@@ -1,25 +1,18 @@
-deploy: install download-data build-data upload-data build 
-
-install:
-	# nvm install 14
-	# nvm use 14
+deploy:
 	npm install
+	npm run build
 
-serve: 
-	node_modules/.bin/webpack-dev-server
+serve:
+	npm run serve
 
 download-data:
-	rm -f ./src/sources.json
-	rm -rf ./dist/data/
-	mkdir -p ./dist/data/
-	mkdir -p data
-	cd data && bash ../fetch_data.sh
+	npm run fetch-data
 
 build-data:
-	node parse_data.js
+	npm run build-data
 
 upload-data:
-	node mapbox.js
+	npm run upload-data
 
 build:
-	node_modules/.bin/webpack 
+	npm run build-app

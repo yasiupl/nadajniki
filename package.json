@@ -3,7 +3,16 @@
   "version": "1.0.0",
   "description": "Map of polish radio stations.",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
+    "fetch-data": "node scripts/fetch-data.mjs",
+    "build-data": "node --max-old-space-size=4096 parse_data.js",
+    "upload-data": "node mapbox.js",
+    "build-app": "webpack",
+    "build": "npm run fetch-data && npm run build-data && npm run upload-data && npm run build-app",
+    "serve": "webpack-dev-server",
     "test": "make test"
   },
   "repository": {

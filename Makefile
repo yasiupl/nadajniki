@@ -11,8 +11,11 @@ download-data:
 build-data:
 	npm run build-data
 
-upload-data:
-	npm run upload-data
+fetch-stats:
+	npm run fetch-stats
 
 build:
 	npm run build-app
+
+test:
+	npm test

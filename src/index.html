@@ -1,13 +1,18 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <base target="_blank">
+  <meta charset="utf-8">
   <title><%= htmlWebpackPlugin.options.title %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Mapa stacji z wykazu pozwoleń radiowych UKE dla sieci radiokomunikacji ruchomej lądowej: wyszukiwarka, pasma, analizy i historia zmian.">
+  <meta name="color-scheme" content="light dark">
+  <!-- Zapisany motyw (src/js/theme.js) obowiązuje przed pierwszym rysowaniem strony. -->
+  <script>try { var theme = localStorage.getItem('theme'); if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme } catch (error) {}</script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    
+
   <meta property="og:title" content="<%= htmlWebpackPlugin.options.title %>">
-  <meta property="og:description" content="Mapa nadajników z listy pozwoleń RRL UKE.">
+  <meta property="og:description" content="Mapa nadajników z wykazu pozwoleń RRL UKE.">
   <meta property="og:image" content="/icons/icon_512x512.png">
   <meta property="og:url" content="https://nadajniki.yasiu.pl">
   <meta name="twitter:card" content="summary_large_image">
@@ -19,6 +24,7 @@
   })(window,document,'script','dataLayer','GTM-N79X7MS');</script>
   <!-- End Google Tag Manager -->
   <script defer data-domain="nadajniki.yasiu.pl" src="https://plausible.yasiu.pl/js/script.js"></script>
+  <script>window.plausible = window.plausible || function () { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
 </head>
 
 <body>
@@ -26,59 +32,120 @@
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N79X7MS"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
-  <nav>
-    <div class="nav-wrapper">
-      <a href="#" data-target="menu" class="sidenav-trigger show-on-large"><i class="material-icons">menu</i></a>
-      <a href="#!" class="brand-logo center"><%= htmlWebpackPlugin.options.title %></a>
-      <a href="#" data-target="filters" class="sidenav-trigger show-on-large right"><i
-          class="material-icons">filter_list</i></a>
+
+  <header class="topbar">
+    <button type="button" class="icon-button" data-action="open-menu" aria-label="Menu"><i class="material-icons" aria-hidden="true">menu</i></button>
+    <a class="brand" href="/">Mapa nadajników</a>
+    <div class="search" role="search">
+      <i class="material-icons search-icon" aria-hidden="true">search</i>
+      <input id="search-input" type="search" placeholder="Operator, miejscowość, częstotliwość…" autocomplete="off" spellcheck="false"
+        role="combobox" aria-label="Szukaj stacji" aria-autocomplete="list" aria-controls="search-results" aria-expanded="false">
+      <button id="search-clear" type="button" class="icon-button" aria-label="Wyczyść wyszukiwanie" hidden><i class="material-icons" aria-hidden="true">close</i></button>
+      <div id="search-results" class="search-results" role="listbox" aria-label="Podpowiedzi" hidden></div>
     </div>
-  </nav>
+    <button id="theme-toggle" type="button" class="icon-button theme-toggle" data-action="toggle-theme" aria-label="Włącz tryb ciemny" title="Włącz tryb ciemny">
+      <i class="material-icons" aria-hidden="true">dark_mode</i></button>
+    <button type="button" class="button filters-button" data-action="open-filters" aria-label="Filtry">
+      <i class="material-icons" aria-hidden="true">tune</i><span class="label">Filtry</span><span id="filters-count" class="count-badge" hidden>0</span>
+    </button>
+  </header>
 
-  <ul id="filters" class="sidenav">
-    <li><a class="sidenav-close material-icons left">close</a></li>
-  </ul>
+  <main class="layout">
+    <div id="map" class="map"></div>
 
-  <ul id="menu" class="sidenav">
-    <li>
-      <div class="user-view">
-        <div class="background deep-orange">
-        </div>
-        <a href="https://yasiu.pl"><img class="circle" alt="yasiu.pl avatar" src="https://yasiu.pl/assets/meirl.png"></a>
-        <a href="https://yasiu.pl"><span class="white-text name">Marcin Jasiukowicz</span></a>
-        <a href="mailto:nadajniki@yasiu.pl?subject=Nadajniki"><span class="white-text email">nadajniki@yasiu.pl</span></a>
+    <div class="map-overlay">
+      <div class="map-tools" role="toolbar" aria-label="Warstwy i narzędzia mapy">
+        <button type="button" class="tool-button" data-action="toggle-layer" data-tool="coverage" aria-pressed="false" title="Obszary obsługi z pozwoleń">
+          <i class="material-icons" aria-hidden="true">blur_circular</i><span>Obszary obsługi</span></button>
+        <button type="button" class="tool-button" data-action="toggle-layer" data-tool="heat" aria-pressed="false" title="Gęstość stacji">
+          <i class="material-icons" aria-hidden="true">grain</i><span>Gęstość</span></button>
+        <button type="button" class="tool-button" data-action="toggle-layer" data-tool="labels" aria-pressed="true" title="Etykiety częstotliwości (przy dużym przybliżeniu)">
+          <i class="material-icons" aria-hidden="true">label</i><span>Etykiety</span></button>
+        <button type="button" class="tool-button" data-action="probe-pick" data-tool="probe" aria-pressed="false" title="Stacje, których obszar obsługi obejmuje wybrany punkt">
+          <i class="material-icons" aria-hidden="true">gps_fixed</i><span>Zasięg w punkcie</span></button>
       </div>
-    </li>
-    <li><a href="https://yasiu.pl"><i class="material-icons">account_circle</i>Portfolio</a></li>
-    <li><a href="https://patreon.com/yasiupl"><i class="material-icons">monetization_on</i>Wsparcie</a></li>
-    <li><a href="https://paypal.me/yasiupl"><i class="material-icons">money</i>Donacje</a></li>
-    <li><a href="https://github.com/yasiupl/nadajniki"><i class="material-icons">code</i>Kod Źródłowy</a></li>
-    <li><a href="https://dane.gov.pl/dataset/1070"><i class="material-icons">data_usage</i>Dane Źródłowe</a></li>
-    <li>
-      <div class="divider"></div>
-    </li>
-    <li><a class="subheader">Projekty</a></li>
-    <li><a href="https://rocket.watch"><i class="material-icons">launch</i>rocket.watch</a></li>
-    <li><a href="https://nadajniki.yasiu.pl"><i class="material-icons">launch</i>Mapa nadajników radiowych</a></li>
-  </ul>
-
-  <main>
-    <div id="map"></div>
-    <div id="details">Kliknij na mapę lub przybliż aby wyświelić więcej informacji.</div>
-
-    <div id="disclaimer" class="modal">
-      <div class="modal-content">
-        <h4>Uwaga!</h4>
-        <p>Częstotliwości podane na tej stonie są informacją publiczną i służą tylko do nasłuchu.</p>
-        <h5><b>Zabrania się nadawać na każdej z częstotliwości podanych na tej stronie bez odpowiednich zezwoleń.</b></h5>
-        <p>Dane zawarte na tej witrynie pochodzą z publicznych zasobów Urzędu Komunikacji Elektronicznej dostępnych <a href="https://dane.gov.pl/dataset/1070">tutaj</a>.</p>
-      </div>
-      <div class="modal-footer">
-        <a class="modal-close waves-effect waves-green btn-flat">Rozumiem</a>
-      </div>
+      <div id="active-filters" class="active-filters" aria-label="Aktywne filtry" hidden></div>
     </div>
+
+    <aside id="panel" class="panel" aria-label="Stacje">
+      <button type="button" class="sheet-handle" data-action="sheet-toggle" aria-label="Zmień wysokość panelu"><span></span></button>
+      <div class="panel-tabs" role="tablist">
+        <button type="button" role="tab" data-view="list" aria-selected="true">Stacje</button>
+        <button type="button" role="tab" data-view="bands" aria-selected="false">Pasma</button>
+        <button type="button" role="tab" data-view="analysis" aria-selected="false">Analiza</button>
+        <button type="button" role="tab" data-view="changes" aria-selected="false">Zmiany</button>
+        <button type="button" class="icon-button panel-collapse" data-action="toggle-panel" aria-label="Zwiń panel" title="Zwiń panel">
+          <i class="material-icons" aria-hidden="true">chevron_left</i></button>
+      </div>
+      <div id="panel-body" class="panel-body" role="tabpanel">
+        <p class="muted loading">Wczytywanie danych…</p>
+      </div>
+    </aside>
+    <button type="button" class="panel-expand" data-action="toggle-panel" aria-label="Rozwiń panel">
+      <i class="material-icons" aria-hidden="true">chevron_right</i><span>Stacje</span></button>
   </main>
-  
-</body>
 
+  <aside id="filters" class="drawer drawer-right" aria-label="Filtry" hidden>
+    <div class="drawer-header">
+      <h2>Filtry</h2>
+      <button type="button" class="text-button" data-action="clear-filters">Wyczyść</button>
+      <button type="button" class="icon-button" data-action="close-drawer" aria-label="Zamknij filtry"><i class="material-icons" aria-hidden="true">close</i></button>
+    </div>
+    <div id="filters-body" class="drawer-body"></div>
+    <div class="drawer-footer">
+      <button id="filters-apply" type="button" class="button button-primary button-block">Pokaż stacje</button>
+    </div>
+  </aside>
+
+  <aside id="menu" class="drawer drawer-left" aria-label="Menu" hidden>
+    <div class="drawer-header">
+      <h2>Mapa nadajników radiowych</h2>
+      <button type="button" class="icon-button" data-action="close-drawer" aria-label="Zamknij menu"><i class="material-icons" aria-hidden="true">close</i></button>
+    </div>
+    <div class="drawer-body">
+      <p>Mapa pokazuje stacje z wykazu pozwoleń radiowych UKE dla klasycznych sieci radiokomunikacji ruchomej lądowej (RRL).</p>
+      <p id="data-info" class="muted small"></p>
+      <section class="menu-section" aria-labelledby="theme-title">
+        <h3 id="theme-title">Wygląd</h3>
+        <div class="segmented" role="group" aria-labelledby="theme-title">
+          <button type="button" data-action="set-theme" data-value="auto" aria-pressed="true">Automatyczny</button>
+          <button type="button" data-action="set-theme" data-value="light" aria-pressed="false">Jasny</button>
+          <button type="button" data-action="set-theme" data-value="dark" aria-pressed="false">Ciemny</button>
+        </div>
+        <p class="muted small">Tryb automatyczny przyjmuje ustawienie systemu lub przeglądarki.</p>
+      </section>
+      <nav class="menu-links" aria-label="Linki">
+        <a href="https://bip.uke.gov.pl/pozwolenia-radiowe/wykaz-pozwolen-radiowych-tresci/klasyczne-sieci-rrl,9.html" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">data_usage</i>Wykaz pozwoleń (BIP UKE)</a>
+        <a id="archive-link" href="https://dane.gov.pl/dataset/1070" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">history</i>Archiwum wydań (dane.gov.pl)</a>
+        <a href="https://bip.uke.gov.pl/download/gfx/bip/pl/defaultaktualnosci/140/9/96/_legenda_do_wykazu_rrl.pdf" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">menu_book</i>Legenda wykazu (PDF)</a>
+        <a href="https://github.com/yasiupl/nadajniki" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">code</i>Kod źródłowy</a>
+      </nav>
+      <hr>
+      <div class="author">
+        <a href="https://yasiu.pl" target="_blank" rel="noopener"><img class="avatar" alt="" src="https://yasiu.pl/assets/meirl.png" width="40" height="40" loading="lazy"></a>
+        <div>
+          <a href="https://yasiu.pl" target="_blank" rel="noopener"><strong>Marcin Jasiukowicz</strong></a><br>
+          <a href="mailto:nadajniki@yasiu.pl?subject=Nadajniki">nadajniki@yasiu.pl</a>
+        </div>
+      </div>
+      <nav class="menu-links" aria-label="Autor i wsparcie">
+        <a href="https://yasiu.pl" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">account_circle</i>Portfolio</a>
+        <a href="https://patreon.com/yasiupl" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">monetization_on</i>Wsparcie</a>
+        <a href="https://paypal.me/yasiupl" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">money</i>Donacje</a>
+      </nav>
+    </div>
+  </aside>
+  <div id="scrim" class="scrim" hidden></div>
+
+  <dialog id="disclaimer" class="dialog" aria-labelledby="disclaimer-title">
+    <form method="dialog">
+      <h2 id="disclaimer-title">Uwaga</h2>
+      <p>Częstotliwości na tej stronie są informacją publiczną. Używaj ich tylko do nasłuchu.</p>
+      <p><strong>Nie nadawaj na żadnej z tych częstotliwości bez wymaganego pozwolenia radiowego.</strong></p>
+      <p>Dane pochodzą z publicznych zasobów Urzędu Komunikacji Elektronicznej (UKE).</p>
+      <div class="dialog-actions"><button class="button button-primary" value="ok">Rozumiem</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
 </html>

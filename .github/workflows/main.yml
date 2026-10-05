@@ -1,11 +1,6 @@
-name: 'Miesięczna aktualizacja danych'
+name: 'Ręczna aktualizacja danych'
 on:
   workflow_dispatch:
-  schedule:
-    # Run montly at 26th
-    - cron: '0 0 26 * *'
-    # Run two days later, in case 26th is on weekend.
-    - cron: '0 0 28 * *'
 jobs:
   build:
     name: Request deploy hook

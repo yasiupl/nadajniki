@@ -1,6 +1,6 @@
 # nadajniki
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/c0bd9134-1540-47c5-b785-6cce698465f8/deploy-status)](https://app.netlify.com/sites/nadajniki/deploys) [![Miesięczna aktualizacja danych](https://github.com/yasiupl/nadajniki/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/yasiupl/nadajniki/actions/workflows/main.yml)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/c0bd9134-1540-47c5-b785-6cce698465f8/deploy-status)](https://app.netlify.com/sites/nadajniki/deploys) [![Ręczna aktualizacja danych](https://github.com/yasiupl/nadajniki/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/yasiupl/nadajniki/actions/workflows/main.yml)
 
 ![mapa](https://repository-images.githubusercontent.com/209359790/38e0ad00-6704-11ea-9dc2-9f2d9670effa)
 
@@ -32,4 +32,4 @@ Zmienne środowiskowe:
 | `DEPLOY_HOOK_URL` | Adres deploy hooka. Funkcja cykliczna wywołuje ten adres 26. dnia każdego miesiąca. |
 | `CRON_SECRET` | Tylko Vercel. Vercel wysyła tę wartość w nagłówku `Authorization`. Funkcja odrzuca wywołania bez tej wartości. |
 
-Workflow GitHub Actions `.github/workflows/main.yml` wywołuje deploy hook 26. i 28. dnia miesiąca. Workflow używa sekretu repozytorium `DEPLOY_HOOK_URL`.
+Workflow GitHub Actions `.github/workflows/main.yml` pozwala ręcznie wywołać deploy hook. Workflow używa sekretu repozytorium `DEPLOY_HOOK_URL`.

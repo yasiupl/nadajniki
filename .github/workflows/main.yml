@@ -7,4 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Curl request
-        run: curl -X POST -d {} ${{ secrets.DEPLOY_HOOK_URL }}
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "::error::Repository secret DEPLOY_HOOK_URL is empty or missing (Settings > Secrets and variables > Actions > Repository secrets)"
+            exit 1
+          fi
+          curl -fsS -X POST -d '{}' "$DEPLOY_HOOK_URL"

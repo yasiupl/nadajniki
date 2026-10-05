@@ -4,6 +4,9 @@
   "installCommand": "npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/stacja/:path*", "destination": "/index.html" }
+  ],
   "crons": [
     { "path": "/api/scheduled-deploy", "schedule": "0 0 26-29 * *" }
   ]

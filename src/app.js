@@ -1,603 +1,528 @@
-import 'materialize-css/dist/js/materialize.min.js'
-import mapboxgl from 'mapbox-gl'
-import sources from './sources.json'
 import './style.scss'
+import { ARCHIVE_URL, SITE_TITLE } from './js/config.js'
+import { formatDate, formatFrequency, distanceMeters, stationsLabel } from './js/format.js'
+import { filtersFromParams, emptyFilters, createContext, applyFilters } from './js/filters.js'
+import {
+    dataset, loadStations, loadHistory, loadPopular, loadDetails, resolveStation, stationPath,
+    stationsOnFrequency, ensureSearchIndex
+} from './js/data.js'
+import { state, on } from './js/store.js'
+import * as mapView from './js/map.js'
+import {
+    ui, PAGE_SIZE, initPanel, scheduleRender, renderDrawer, stationsInView, setSheet, toggleCollapsed, resetScroll
+} from './js/panel.js'
+import { initSearch } from './js/search.js'
+import { initTooltips } from './js/charts.js'
+import { showStationUrl, clearStationUrl, syncFiltersUrl, currentStationId, onRouteChange } from './js/router.js'
+import { toSdrSharp, toCsv } from './js/export.js'
+import { $, toast, copyText, downloadFile, isMobile } from './js/ui.js'
+import { themePreference, effectiveTheme, saveThemePreference, onSystemThemeChange } from './js/theme.js'
 
-const xml2js = require('xml2js');
+let search = null
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js');
-  });
-}
+// --- Filtry ---
 
-mapboxgl.accessToken = 'pk.eyJ1IjoieWFzaXUiLCJhIjoiY2o4dWF2dmZnMHEwODMzcnB6NmZ5cGpicCJ9.XzC5pC59qPSmqbLv2xBDQw';
-
-var selectedTabIndex = 0;
-
-const layers = sources.layers;
-
-const headers = {
-  permitID: 'Nr pozwolenia',
-  op: 'Operator',
-  opAdress: 'Adres operatora',
-  name: 'Nazwa stacji',
-  stationType: 'Rodzaj stacji',
-  networkType: 'Rodzaj sieci',
-  lon: 'Długość geograficzna',
-  lat: 'Szerokość geograficzna',
-  radius: 'Promień obszaru obsługi',
-  location: 'Lokalizacja stacji',
-  erp: 'Maksymalna moc zastępcza (ERP) [dBW]',
-  azimuth: 'Azymut',
-  elevation: 'Elewacja',
-  polarization: 'Polaryzacja',
-  gain: 'Zysk anteny',
-  antennaHeight: 'Wysokość umieszczenia anteny',
-  groundHeight: 'Wysokość anteny',
-  verticalCharacteristic: 'Kod charakterystyki promieniowania - pion',
-  horizontalCharacteristic: 'Kod charakterystyki promieniowania - poziom',
-  tx: 'Częstotliwości nadawcze [MHz]',
-  rx: 'Częstotliwości odbiorcze [MHz]',
-  txSpan: 'Szerokości kanałów nadawczych [kHz]',
-  rxSpan: 'Szerokości kanałów odbiorczych [kHz]',
-  permitExpiry: 'Data wygaśnięcia',
-}
-
-const types = {
-  A: {
-    name: "Dyspozytorska",
-    description: "Stacja radiowa dyspozytorska",
-    color: "#03a8a0"
-  },
-  B: {
-    name: "Przywoławcza",
-    description: "Stacja radiowa przywoławcza.",
-    color: "#039c4b"
-  },
-  C: {
-    name: "Transmisja danych",
-    description: "np. stany liczników cyfrowych.",
-    color: "#66d313"
-  },
-  D: {
-    name: "Retransmisja",
-    description: "Retransmisja sygnałów / przemiennik.",
-    color: "#fedf17"
-  },
-  E: {
-    name: "Zdalne sterowanie",
-    description: "Zdalne sterowanie urządzeniami.",
-    color: "#ff0984"
-  },
-  F: {
-    name: "Powiadamiania o alarmach",
-    description: "Systemy alarmowe ochrony mienia.",
-    color: "#21409a"
-  },
-  P: {
-    name: "Bezprzewodowe poszukiwanie osób",
-    description: "System stosowany np. w szpitalach.",
-    color: "#04adff"
-  },
-  Q: {
-    name: "Mikrofony bezprzewodowe",
-    description: "Technika estradowa.",
-    color: "#e48873"
-  },
-  R: {
-    name: "Reportażowa",
-    description: "Stacja reporterów rozgłośni radiowej.",
-    color: "#f16623"
-  },
-  T: {
-    name: "Trunkingowa",
-    description: "Sieć kumulująca sygnały z wielu źródeł w jedną wiązkę.",
-    color: "#f44546"
-  },
-  L: {
-    name: "Samorządowe",
-    description: "Nowy typ UKE, nieudokumentowany w legendzie.",
-    color: "#666"
-  }
-}
-
-const paint = {
-  "circle-color": [
-    'match',
-    ['get', 'mapNetworkType'],
-    "A", types["A"].color,
-    "B", types["B"].color,
-    "C", types["C"].color,
-    "D", types["D"].color,
-    "E", types["E"].color,
-    "F", types["F"].color,
-    "P", types["P"].color,
-    "Q", types["Q"].color,
-    "R", types["R"].color,
-    "T", types["T"].color,
-    "L", types["L"].color,
-    '#11b4da'
-  ],
-  "circle-radius": [
-    'interpolate', ['linear'],
-    ['zoom'],
-    7, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 100], 3],
-    20, ['+', ['/', ['number', ['get', 'mapRadius'], 1], 1000], 16]
-  ],
-  "circle-stroke-width": 1,
-  "circle-opacity": 0.8,
-  "circle-stroke-color": ['match',
-    ['get', 'mapNetworkType'],
-    "B", '#555',
-    "D", '#555',
-    '#FFF'
-  ]
-}
-
-const map = new mapboxgl.Map({
-  container: 'map',
-  style: 'mapbox://styles/mapbox/light-v10',
-  hash: true,
-  center: [19.134422, 51.919231],
-  zoom: 6
-});
-
-// Add geolocate control to the map.
-map.addControl(new mapboxgl.GeolocateControl({
-  positionOptions: {
-    enableHighAccuracy: true
-  },
-  trackUserLocation: true
-}));
-
-map.addControl(new mapboxgl.NavigationControl());
-
-
-map.on('load', function () {
-
-  if (sources.uploadedTileset) {
-    map.addLayer({
-      id: 'nadajniki',
-      type: "circle",
-      source: {
-        type: 'vector',
-        url: `mapbox://${sources.uploadedTileset}`
-      },
-      'source-layer': sources.uploadedTileset,
-      paint: paint
-    });
-
-    map.on('click', 'nadajniki', (e) => {
-      detailsLoad(e.features[0].properties.id);
-    });
-
-    map.on('mouseenter', 'nadajniki', function () {
-      map.getCanvas().style.cursor = 'pointer';
-    });
-
-    map.on('mouseleave', 'nadajniki', function () {
-      map.getCanvas().style.cursor = '';
-    });
-  } else {
-    for (let i in layers) {
-      addLayerFromHash(map, layers[i].hash);
+async function runFilters({ fit = false } = {}) {
+    const filters = state.filters
+    let history = dataset.history
+    if (filters.status && !history) {
+        try {
+            history = await loadHistory()
+        } catch {
+            toast('Nie można wczytać historii zmian.')
+            filters.status = ''
+            filters.release = ''
+        }
     }
-  }
-
-});
-
-map.on('idle', detailsLoadInView);
-
-map.on('moveend', detailsLoadInView);
-
-document.addEventListener('DOMContentLoaded', function () {
-  M.Sidenav.init(document.querySelector('#filters'), {
-    edge: 'right'
-  });
-  M.Sidenav.init(document.querySelector('#menu'));
-
-  // Wyświetl Disclaimer na pierwszym uruchomieniu strony.
-  if (!localStorage.getItem("disclaimer")) {
-    let modal = M.Modal.init(document.querySelector('.modal'));
-    modal.open();
-    localStorage.setItem("disclaimer", true);
-  }
-
-
-  const filters = document.getElementById('filters');
-  let toggleAll = document.createElement('li');
-  toggleAll.innerHTML = '<a>Przełącz Wszystkie</a>';
-  toggleAll.onclick = toggleAllFilters;
-  filters.appendChild(toggleAll);
-
-
-  let divider1 = document.createElement('li');
-  divider1.innerHTML = '<a>Typy sieci (Kliknij aby przełączyć)</a>';
-  divider1.onclick = toggleAllFilters;
-  divider1.category = 'toggleType';
-  filters.appendChild(divider1);
-
-  // Wypisz wszystkie typy w menu bocznym
-  for (let i in types) {
-    let type = types[i];
-    let link = document.createElement('li');
-    link.innerHTML = `<a class="truncate"><label><input type="checkbox" id="toggleType${i}" toggles="mapNetworkType" data="${i}" checked="checked"/><span></span></label><span class="badge" style="background-color:${type.color}"> </span>${type.name}</a>`;
-    link.onclick = function () {
-      toggleType(i)
-    };
-    filters.appendChild(link);
-  }
-
-  let divider2 = document.createElement('li');
-  divider2.innerHTML = '<a>Sieci (Kliknij aby przełączyć)</a>';
-  divider2.onclick = toggleAllFilters;
-  divider2.category = 'toggleTag';
-  filters.appendChild(divider2);
-
-
-  // Wypisz wszystkie tagi w menu bocznym
-  const tags = sources.tags;
-  for (let tag of tags) {
-    let link = document.createElement('li');
-    link.innerHTML = `<a class="truncate"><label><input type="checkbox" id="toggleTag${tag.tag}" toggles="tag" data="${tag.tag}" checked="checked"/><span></span></label><span class="badge">${tag.length}</span>${tag.name}</a>`;
-    link.onclick = function () {
-      toggleTag(tag.tag)
-    };
-    filters.appendChild(link);
-  }
-
-  // przerwa od dołu aby wszystkie elementy były widoczne
-  let divider3 = document.createElement('li');
-  divider3.innerHTML = '<a></br></br></a>';
-  filters.appendChild(divider3);
-
-  detailsLegend();
-});
-
-
-function detailsLoad(id, mapInstance = map) {
-  let details = document.querySelector('#details');
-  let description = ''
-  const feature = map.queryRenderedFeatures({
-    filter: ['==', 'id', id],
-    validate: false
-  });
-  const properties = feature[0].properties;
-  const coordinates = [properties.lon, properties.lat];
-
-  for (let i in headers) {
-
-    let property = (typeof properties[i] === 'string') ? properties[i].replace('["', '').replace('"]', '').split('","') : properties[i];
-    //let property = JSON.parse(properties[i]);
-
-    if (i == 'networkType') {
-      description += `<b>${headers[i]}:</b> ${property}: ${types[property[0]].name}</br>`;
-      continue
-    }
-    description += `<b>${headers[i]}:</b> ${(Array.isArray(property))?property.join(', ') : property}</br>`;
-  }
-
-  details.data = 'details'
-  details.innerHTML = `<i id="detailsClose" class="material-icons right">arrow_back</i>`
-  details.innerHTML += description;
-
-  document.querySelector("#detailsClose").addEventListener('click', () => {
-    details.data = '';
-    details.scrollTop = 0;
-    clearPopUps();
-    detailsLegend();
-    detailsLoadInView();
-  });
-
-  mapInstance.flyTo({
-    center: coordinates,
-    offset: [(window.innerWidth > 992) ? window.innerWidth / 10 : 0, (window.innerWidth < 992) ? -1 * window.innerHeight / 4 : 0],
-    speed: 0.8,
-    zoom: map.getZoom(),
-    bearing: 0
-  });
-
-
-  let popup = new mapboxgl.Popup()
-    .setLngLat(coordinates)
-    .setHTML(`<center>${properties.mapOp.slice(0, 30)}...</br><b>${properties.mapTx}</b></center>`)
-    .addTo(mapInstance);
-
-  (window.popups = window.popups || []).push(popup)
+    const base = filters.status === 'removed' ? history.removed : dataset.stations
+    if (filters.q.trim()) ensureSearchIndex(base)
+    const context = createContext(filters, { changes: history?.changes })
+    const result = applyFilters(base, filters, context)
+    state.filtered = result.stations
+    state.facets = result.facets
+    ui.listLimit = PAGE_SIZE
+    ui.changesLimit = PAGE_SIZE
+    mapView.setStations(state.filtered)
+    if (state.layers.coverage) updateCoverage()
+    syncFiltersUrl(filters)
+    search?.setValue(filters.q)
+    renderDrawer()
+    scheduleRender()
+    if (fit) mapView.fitToStations(state.filtered)
 }
 
-
-function detailsLoadInView() {
-  let details = document.querySelector('#details');
-  let features = map.queryRenderedFeatures({
-    filter: ['has', 'tx'],
-    validate: false
-  }).sort((a, b) => a.properties.mapOp.localeCompare(b.properties.mapOp));
-  const zoomTreshold = 12;
-  const featuresTreshold = 100;
-
-  if (details.data != 'details' && (map.getZoom() > zoomTreshold || features.length < featuresTreshold)) {
-    details.innerHTML = `
-    <div class="tab-menu">
-      <ul class="tabs">
-        <li class="tab">
-          <a ${selectedTabIndex == 0 ? 'class="active"' : '' } href="#transmitter-tab">Nadajniki</a>
-        </li>
-        <li class="tab">
-          <a ${selectedTabIndex == 1 ? 'class="active"' : ''} href="#bandplan-tab">Częstotliwości</a>
-        </li>
-      </ul>
-      <a class='dropdown-trigger' href='#' data-target='actions-dropdown'><i class="material-icons">more_vert</i></a>
-      <ul id="actions-dropdown" class="dropdown-content" />
-        <li>
-          <a id="details-export-to-sdr-sharp">Eksportuj widoczne do SDR#</a>
-        </li>
-      </ul>
-    </div>`;
-    details.data = 'collection'
-
-    let containerDiv = document.createElement('div')
-    containerDiv.id = "transmitter-tab"
-    containerDiv.className = "tab-container"
-    containerDiv.innerHTML = "Nadajniki w widoku. Oddal aby zobaczyć legendę."
-    details.appendChild(containerDiv);
-    
-    let collection = document.createElement('ul');
-    collection.className = 'transmitters collection'
-    
-    containerDiv.appendChild(collection);
-
-    for (let i in features) {
-      let feature = features[i];
-
-      let element = document.createElement('li');
-      element.className = 'collection-item truncate';
-      element.onclick = function () {
-        detailsLoad(feature.properties.id)
-      };
-      element.innerHTML = `${feature.properties.mapOp}${getBadgesForFrequencies(feature.properties)}`;
-      collection.appendChild(element);
-    }
-  }
-
-  if (details.data != 'details' && map.getZoom() < zoomTreshold && features.length > featuresTreshold) {
-    detailsLegend();
-    return;
-  }
-  
-  createBandplanView(details, features);
-
-  let tabInstance = M.Tabs.getInstance(document.querySelector('.tabs'))
-  if (!tabInstance) {
-    tabInstance = M.Tabs.init(document.querySelector('.tabs'), {onShow: onTabShow})
-  }
-
-  var dropdownElements = document.querySelectorAll('.dropdown-trigger');
-
-  let dropdownInstance = M.Dropdown.init(dropdownElements, {constrainWidth: false, coverTrigger: false});  
-    
-  addDropdownButtonListeners();
-
+function updateFilters(change, options) {
+    change(state.filters)
+    return runFilters(options)
 }
 
-function exportToSdrSharp() {
+function toggleFacet(facet, value) {
+    updateFilters(filters => {
+        const set = filters[facet]
+        if (set.has(value)) set.delete(value)
+        else set.add(value)
+    })
+}
 
-    let features = map.queryRenderedFeatures({
-      filter: ['has', 'tx'],
-      validate: false
-    }).sort((a, b) => a.properties.mapOp.localeCompare(b.properties.mapOp));
+function setFrequencyRange(min, max, options = { fit: true }) {
+    updateFilters(filters => {
+        filters.frequencyMin = Number.isFinite(min) ? min : null
+        filters.frequencyMax = Number.isFinite(max) ? max : null
+    }, options)
+}
 
-    let bandplan = getBandplanFromFeatures(features);
-    let exportedData = {ArrayOfMemoryEntry: []};
+// --- Karta stacji i nakładki ---
 
-    bandplan.forEach(band => {
-      exportedData.ArrayOfMemoryEntry.push({
-          MemoryEntry: 
-          {
-            IsFavourite: false,
-            Name: band.ownerName,
-            GroupName: `#${types[band.networkType].name}`,
-            Frequency: `${band.freq.replace('.', '')}0`,
-            DetectorType: `NFM`,
-            Shift: 0,
-            FilterBandwidth: 12500
-          }
-      })
+function sharedFrequencies(station) {
+    return station.tx.slice(0, 8).map(frequency => {
+        const others = stationsOnFrequency(frequency).filter(other => other !== station)
+        const nearest = others.map(other => ({
+            station: other,
+            distance: station.lat !== null && other.lat !== null ? distanceMeters(station.lat, station.lon, other.lat, other.lon) : null
+        })).sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity)).slice(0, 1)
+        return { frequency, others: others.length, nearest }
+    })
+}
+
+async function openStation(target, { initial = false, move = 'ensure' } = {}) {
+    const station = typeof target === 'string' ? await resolveStation(target) : target
+    if (!station) {
+        const first = dataset.history?.releases[0]?.date
+        toast(first ? `Nie znaleziono stacji. Mogła zniknąć z wykazu przed ${formatDate(first)}.` : 'Nie znaleziono stacji.')
+        clearStationUrl()
+        return
+    }
+    const previous = state.overlay
+    state.overlay = {
+        type: 'detail',
+        station,
+        records: null,
+        loading: !station.removed,
+        error: false,
+        shared: sharedFrequencies(station),
+        back: previous && previous.type !== 'detail' ? previous : previous?.back || null
+    }
+    mapView.setSelection(station)
+    showStationUrl(station, { initial })
+    if (move === 'jump') mapView.jumpToStation(station)
+    else if (move === 'fly') mapView.flyToStation(station)
+    else if (move === 'ensure') mapView.ensureVisible(station)
+    if (isMobile() && ui.sheet === 'peek') setSheet('half')
+    scheduleRender()
+
+    const overlay = state.overlay
+    const refresh = () => { if (state.overlay === overlay) scheduleRender() }
+    if (!station.removed) {
+        loadDetails(station.id)
+            .then(records => { overlay.records = records; overlay.loading = false })
+            .catch(() => { overlay.loading = false; overlay.error = true })
+            .finally(refresh)
+    }
+    loadHistory().then(refresh).catch(() => {})
+    loadPopular().then(refresh)
+}
+
+function closeOverlay() {
+    const overlay = state.overlay
+    if (!overlay) return
+    if (overlay.type === 'detail') {
+        mapView.setSelection(null)
+        clearStationUrl()
+        state.overlay = overlay.back || null
+        if (state.overlay?.type === 'probe') {
+            mapView.setProbeStations(state.overlay.results.map(result => result.station))
+        }
+    } else {
+        if (overlay.type === 'probe') mapView.clearProbe()
+        state.overlay = null
+    }
+    scheduleRender()
+}
+
+// Zamyka kartę i nakładki pod nią (np. kartę otwartą z widoku "Zasięg w punkcie").
+function closeAllOverlays() {
+    while (state.overlay) closeOverlay()
+}
+
+function probe(lngLat) {
+    const results = []
+    for (const station of state.filtered) {
+        if (station.removed || station.lat === null || !(station.radius > 0)) continue
+        const distance = distanceMeters(lngLat.lat, lngLat.lng, station.lat, station.lon)
+        if (distance <= station.radius * 1000) results.push({ station, distance })
+    }
+    results.sort((a, b) => a.distance - b.distance)
+    if (state.overlay?.type === 'detail') {
+        mapView.setSelection(null)
+        clearStationUrl()
+    }
+    if (state.overlay?.type === 'probe') mapView.clearProbe()
+    state.overlay = { type: 'probe', lngLat: { lng: lngLat.lng, lat: lngLat.lat }, results }
+    mapView.showProbe(lngLat)
+    mapView.setProbeStations(results.map(result => result.station))
+    if (isMobile() && ui.sheet === 'peek') setSheet('half')
+    setToolPressed('probe', false)
+    scheduleRender()
+}
+
+async function shareStation(station) {
+    const url = `${window.location.origin}${stationPath(station)}`
+    if (navigator.share && isMobile()) {
+        try {
+            await navigator.share({ title: `${station.operator.name} – ${station.name}`, url })
+            return
+        } catch (error) {
+            if (error.name === 'AbortError') return
+        }
+    }
+    copyText(url, 'Skopiowano link do stacji.')
+}
+
+function exportStations(kind, scope) {
+    const stations = scope === 'probe' ? (state.overlay?.results || []).map(result => result.station) : stationsInView()
+    if (!stations.length) {
+        toast('Brak stacji do eksportu.')
+        return
+    }
+    const date = dataset.release || 'dane'
+    if (kind === 'sdr') downloadFile(`nadajniki-${date}-sdrsharp.xml`, toSdrSharp(stations), 'application/xml')
+    else downloadFile(`nadajniki-${date}.csv`, toCsv(stations, window.location.origin), 'text/csv;charset=utf-8')
+    toast(`Wyeksportowano: ${stationsLabel(stations.length)}.`)
+}
+
+// --- Warstwy mapy ---
+
+function setToolPressed(name, pressed) {
+    const button = document.querySelector(`[data-tool="${name}"]`)
+    if (button) button.setAttribute('aria-pressed', String(pressed))
+}
+
+function updateCoverage() {
+    const { shown, total } = mapView.setCoverage(state.filtered.filter(station => !station.removed))
+    if (shown < total) toast(`Obszary obsługi: ${shown} z ${total} stacji najbliżej środka mapy. Zawęź filtry, aby zobaczyć wszystkie.`, { timeout: 6000 })
+}
+
+function setLayer(name, visible) {
+    mapView.setLayerVisibility(name, visible)
+    if (name === 'coverage') {
+        if (visible) updateCoverage()
+        else mapView.clearCoverage()
+    }
+    setToolPressed(name, visible)
+}
+
+// --- Motyw ---
+
+const THEME_TITLES = { light: 'Włącz tryb ciemny', dark: 'Włącz tryb jasny' }
+
+// Kontrolki motywu: przycisk na pasku górnym i wybór w menu.
+function syncThemeControls() {
+    const preference = themePreference()
+    for (const button of document.querySelectorAll('[data-action="set-theme"]')) {
+        button.setAttribute('aria-pressed', String(button.dataset.value === preference))
+    }
+    const theme = effectiveTheme()
+    const toggle = $('#theme-toggle')
+    toggle.title = THEME_TITLES[theme]
+    toggle.setAttribute('aria-label', THEME_TITLES[theme])
+    toggle.querySelector('.material-icons').textContent = theme === 'dark' ? 'light_mode' : 'dark_mode'
+}
+
+// Styl mapy i kolory w panelu zależą od motywu, więc zmiana motywu odświeża oba.
+function applyTheme() {
+    mapView.setTheme(effectiveTheme())
+    syncThemeControls()
+    renderDrawer()
+    scheduleRender()
+}
+
+function setThemePreference(preference) {
+    saveThemePreference(preference)
+    applyTheme()
+}
+
+// --- Akcje ---
+
+const actions = {
+    'open-station': element => openStation(element.dataset.id),
+    'open-station-value': element => openStation(element.dataset.value),
+    'close-overlay': closeOverlay,
+    'zoom-station': () => state.overlay?.station && mapView.flyToStation(state.overlay.station, { zoom: 13 }),
+    'share-station': () => state.overlay?.station && shareStation(state.overlay.station),
+    'copy-frequencies': () => {
+        const station = state.overlay?.station
+        if (station) copyText(station.tx.map(formatFrequency).join('\n'), 'Skopiowano częstotliwości nadawcze.')
+    },
+    'copy-text': element => copyText(element.dataset.value),
+    'filter-frequency': element => {
+        const value = parseFloat(element.dataset.value)
+        closeAllOverlays()
+        state.view = 'list'
+        setFrequencyRange(value, value)
+    },
+    'filter-range': element => {
+        const [min, max] = element.dataset.value.split('-').map(Number)
+        setFrequencyRange(min, max, { fit: false })
+    },
+    'filter-operator': element => {
+        closeAllOverlays()
+        state.view = 'list'
+        updateFilters(filters => { filters.operator = element.dataset.value }, { fit: true })
+    },
+    'filter-band': element => updateFilters(filters => { filters.bands = new Set([element.dataset.value]) }),
+    'set-band': element => { ui.bandKey = element.dataset.value; ui.bandLimit = PAGE_SIZE; scheduleRender() },
+    'band-sort': element => { ui.bandSort = element.dataset.value; scheduleRender() },
+    'band-more': () => { ui.bandLimit += PAGE_SIZE; scheduleRender() },
+    'set-scope': element => { state.scope = element.dataset.value; scheduleRender() },
+    'toggle-type': element => toggleFacet('types', element.dataset.value),
+    'toggle-band': element => toggleFacet('bands', element.dataset.value),
+    'toggle-bandwidth': element => toggleFacet('bandwidths', element.dataset.value),
+    'toggle-category': element => toggleFacet('categories', element.dataset.value),
+    'toggle-office': element => toggleFacet('offices', element.dataset.value),
+    'toggle-facet': element => toggleFacet(element.dataset.facet, element.dataset.value),
+    'set-status': element => updateFilters(filters => {
+        filters.status = element.dataset.value
+        filters.release = filters.status ? dataset.release : ''
+    }),
+    'set-expiring': element => updateFilters(filters => { filters.expiring = parseInt(element.dataset.value, 10) || 0 }),
+    'remove-query': () => updateFilters(filters => { filters.q = '' }),
+    'remove-operator': () => updateFilters(filters => { filters.operator = '' }),
+    'remove-range': () => setFrequencyRange(null, null, { fit: false }),
+    'clear-filters': () => updateFilters(filters => Object.assign(filters, emptyFilters())),
+    'fit-filtered': () => mapView.fitToStations(state.filtered),
+    'list-more': () => { ui.listLimit += PAGE_SIZE; scheduleRender() },
+    'changes-more': () => { ui.changesLimit += PAGE_SIZE; scheduleRender() },
+    'changes-tab': element => { ui.changesTab = element.dataset.value; ui.changesLimit = PAGE_SIZE; scheduleRender() },
+    'changes-release': element => { ui.changesRelease = element.dataset.value; ui.changesLimit = PAGE_SIZE; scheduleRender() },
+    'changes-show': () => {
+        state.view = 'list'
+        updateFilters(filters => {
+            filters.status = ui.changesTab
+            filters.release = ui.changesRelease || ''
+        }, { fit: true })
+    },
+    'retry-history': () => { ui.historyError = false; showView('changes') },
+    'export-sdr': element => exportStations('sdr', element.dataset.scope),
+    'export-csv': element => exportStations('csv', element.dataset.scope),
+    'open-filters': () => openDrawer('filters'),
+    'open-menu': () => openDrawer('menu'),
+    'close-drawer': closeDrawers,
+    'toggle-layer': element => setLayer(element.dataset.tool, element.getAttribute('aria-pressed') !== 'true'),
+    'probe-pick': element => {
+        if (mapView.isPickingProbe()) {
+            mapView.stopProbePick()
+            setToolPressed('probe', false)
+        } else {
+            mapView.startProbePick()
+            setToolPressed('probe', true)
+            toast('Kliknij punkt na mapie. Możesz też kliknąć prawym przyciskiem albo przytrzymać palec na mapie.')
+        }
+    },
+    'set-theme': element => setThemePreference(element.dataset.value),
+    'toggle-theme': () => setThemePreference(effectiveTheme() === 'dark' ? 'light' : 'dark'),
+    'toggle-panel': () => toggleCollapsed(),
+    'sheet-toggle': () => setSheet(ui.sheet === 'peek' ? 'half' : ui.sheet === 'half' ? 'full' : 'peek')
+}
+
+const changes = {
+    'list-sort': element => { ui.listSort = element.value; ui.listLimit = PAGE_SIZE; resetScroll('list'); scheduleRender() },
+    'changes-release': element => { ui.changesRelease = element.value; ui.changesLimit = PAGE_SIZE; scheduleRender() },
+    'status-release': element => updateFilters(filters => { filters.release = element.value })
+}
+
+function showView(view) {
+    closeAllOverlays()
+    state.view = view
+    if (isMobile() && ui.sheet === 'peek') setSheet('half')
+    if (view === 'changes' && !dataset.history) {
+        loadHistory().then(() => { renderDrawer(); scheduleRender() }).catch(() => { ui.historyError = true; scheduleRender() })
+    }
+    if (view === 'analysis') loadPopular().then(scheduleRender)
+    scheduleRender()
+}
+
+// --- Szuflady (filtry, menu) ---
+
+function openDrawer(name) {
+    closeDrawers()
+    const drawer = $(`#${name}`)
+    drawer.hidden = false
+    requestAnimationFrame(() => drawer.classList.add('open'))
+    $('#scrim').hidden = false
+    drawer.querySelector('button, a, input, select')?.focus({ preventScroll: true })
+    if (name === 'filters' && !dataset.history) loadHistory().then(renderDrawer).catch(() => {})
+}
+
+function closeDrawers() {
+    for (const drawer of document.querySelectorAll('.drawer.open')) {
+        drawer.classList.remove('open')
+        setTimeout(() => { if (!drawer.classList.contains('open')) drawer.hidden = true }, 250)
+    }
+    $('#scrim').hidden = true
+}
+
+// --- Start ---
+
+function bindEvents() {
+    document.addEventListener('click', event => {
+        const element = event.target.closest('[data-action]')
+        if (!element || element.disabled) return
+        const action = actions[element.dataset.action]
+        if (!action) return
+        if (element.tagName === 'A' && element.getAttribute('href')) return
+        event.preventDefault()
+        action(element, event)
+    })
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            if (document.querySelector('.drawer.open')) closeDrawers()
+            else if (mapView.isPickingProbe()) actions['probe-pick']()
+            else if (state.overlay && !event.target.closest('input, select, textarea')) closeOverlay()
+            return
+        }
+        // Wiersze tabel z akcją działają z klawiatury tak jak przyciski.
+        if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[data-action]:not(button):not(a)')) {
+            event.preventDefault()
+            event.target.click()
+        }
+    })
+    document.addEventListener('change', event => {
+        const element = event.target.closest('[data-change]')
+        if (element) changes[element.dataset.change]?.(element)
+    })
+    document.addEventListener('submit', event => {
+        const form = event.target.closest('form[data-submit="frequency-range"]')
+        if (!form) return
+        event.preventDefault()
+        const read = name => parseFloat(String(form.elements[name].value).replace(',', '.'))
+        let [min, max] = [read('min'), read('max')]
+        if (Number.isFinite(min) && Number.isFinite(max) && min > max) [min, max] = [max, min]
+        setFrequencyRange(min, max)
+        if (isMobile()) closeDrawers()
     })
 
-  let builder = new xml2js.Builder();
-  let xml = builder.buildObject(exportedData);
+    for (const tab of document.querySelectorAll('.panel-tabs [data-view]')) {
+        tab.addEventListener('click', () => showView(tab.dataset.view))
+    }
+    $('#scrim').addEventListener('click', closeDrawers)
+    $('#filters-apply').addEventListener('click', closeDrawers)
 
-  downloadFile('frequencies.xml', xml);
-}
+    // Najechanie na stację na liście podświetla ją na mapie.
+    const body = $('#panel-body')
+    body.addEventListener('pointerover', event => {
+        const item = event.target.closest('[data-uid]')
+        if (item) mapView.setHover(Number(item.dataset.uid))
+    })
+    body.addEventListener('pointerleave', () => mapView.setHover(null))
 
-function downloadFile(filename, text) {
-  let element = document.createElement('a');
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-  element.setAttribute('download', filename);
-
-  element.style.display = 'none';
-  document.body.appendChild(element);
-
-  element.click();
-
-  document.body.removeChild(element);
-}
-
-function addDropdownButtonListeners()
-{
-  let exportToSdrSharpElement = document.querySelector('#details-export-to-sdr-sharp');
-  exportToSdrSharpElement.addEventListener('click', exportToSdrSharp);
-}
-
-function onTabShow() {
-  let tabInstance = M.Tabs.getInstance(document.querySelector('.tabs'))
-
-  selectedTabIndex = tabInstance.index;
-}
-
-function getBandplanFromFeatures(features)
-{
-  let bandplan = [];
-
-  features.forEach(feature => {
-      const freqs = feature.properties.mapTx.replace(/\s/g, "").split(",")
-
-      freqs.forEach(freq => {
-        if (freq !== '-' && !bandplan.find(a => a.freq === freq && a.ownerName === a.ownerName)) {
-          bandplan.push({
-              freq: freq,
-              id: feature.properties.id,
-              ownerName: feature.properties.mapOp,
-              networkType: feature.properties.mapNetworkType
-          })
+    on('map:ready', () => { scheduleRender() })
+    on('map:move', () => {
+        if (!state.overlay && (state.view === 'list' || state.scope === 'view')) scheduleRender()
+    })
+    on('map:style', () => {
+        mapView.setSelection(state.overlay?.type === 'detail' ? state.overlay.station : null)
+        scheduleRender()
+    })
+    on('station:open', station => openStation(station))
+    on('pick', ({ stations }) => {
+        if (state.overlay?.type === 'detail') {
+            mapView.setSelection(null)
+            clearStationUrl()
         }
-      })
-  })
-  
-  return bandplan.sort((a, b) => a.freq - b.freq);
+        state.overlay = { type: 'pick', stations }
+        if (isMobile() && ui.sheet === 'peek') setSheet('half')
+        scheduleRender()
+    })
+    on('probe', lngLat => probe(lngLat))
+
+    onRouteChange(id => {
+        syncFiltersUrl(state.filters)
+        if (id) {
+            if (state.overlay?.type !== 'detail' || state.overlay.station.id !== id) openStation(id, { move: 'ensure' })
+        } else if (state.overlay?.type === 'detail') {
+            document.title = SITE_TITLE
+            mapView.setSelection(null)
+            state.overlay = state.overlay.back || null
+            scheduleRender()
+        }
+    })
 }
 
-function createBandplanView(details, features) {
-
-  let containerDiv = document.createElement('div')
-  containerDiv.id = "bandplan-tab"
-  containerDiv.className = "tab-container"
-  containerDiv.innerHTML = "Częstotliwości w widoku. Oddal aby zobaczyć legendę."
-  details.appendChild(containerDiv);
-
-  let collection = document.createElement('ul');
-  collection.className = 'bandplan collection'
-  containerDiv.appendChild(collection);
-
-  let bandplan = getBandplanFromFeatures(features);
-
-  bandplan.forEach(band => {
-      let element = document.createElement('li');
-      element.className = 'collection-item bandplan-item truncate';
-
-      element.onclick = function () {
-        detailsLoad(band.id)
-      };
-      
-      element.innerHTML = `<div class='bandplan-entry'><span class="badge new" data-badge-caption=""
-        style="background-color:${types[band.networkType].color}">${band.freq}</span>
-        <span class='bandplan-entry-owner-name'>${band.ownerName}</span></div>`;
-      collection.appendChild(element);
-  });
-}
-
-function getBadgesForFrequencies(featureProps) {
-  const freqs = featureProps.mapTx.replace(/\s/g, "").split(",").sort();
-
-  const freqBadges = freqs.map(freq => {
-    if (freq === '-')
-      return;
-
-    return `<span class="badge new" data-badge-caption="" style="background-color:${types[featureProps.mapNetworkType].color}">${freq}</span>`
-  });
-
-  return `<div class="details-view-badges">${freqBadges.join('')}</div>`;
-
-}
-
-function toggleTag(tag) {
-  let checkbox = document.getElementById('toggleTag' + tag);
-  if (checkbox.checked == true) {
-    checkbox.checked = false;
-  } else {
-    checkbox.checked = true;
-  }
-  applyFilterFromCheckboxes();
-}
-
-function toggleType(type) {
-  let checkbox = document.getElementById('toggleType' + type);
-  if (checkbox.checked == true) {
-    checkbox.checked = false;
-  } else {
-    checkbox.checked = true;
-  }
-  applyFilterFromCheckboxes();
-}
-
-function applyFilterFromCheckboxes() {
-  let hidden = ['all']
-  let checkboxes = document.querySelectorAll('input');
-  for (let i in checkboxes) {
-    let checkbox = checkboxes[i];
-    if (checkbox.checked == false) {
-      hidden.push(['!=', checkbox.getAttribute("toggles"), checkbox.getAttribute("data")]);
+function showDisclaimer() {
+    let seen = false
+    try {
+        seen = Boolean(window.localStorage.getItem('disclaimer'))
+    } catch {
+        // Bez dostępu do localStorage komunikat pokazuje się przy każdej wizycie.
     }
-    // zaaplikuj filtr w ostatniej iteracji
-    if (i == (checkboxes.length - 1)) map.setFilter('nadajniki', hidden);
-  };
+    const dialog = $('#disclaimer')
+    if (seen || !dialog.showModal) return
+    dialog.showModal()
+    dialog.addEventListener('close', () => {
+        try {
+            window.localStorage.setItem('disclaimer', '1')
+        } catch {
+            // Brak zapisu: komunikat wróci przy następnej wizycie.
+        }
+    }, { once: true })
 }
 
-function toggleAllFilters(e) {
-  let category = this.category || /.*/;
-  let status = this.data
-  let checkboxes = document.querySelectorAll('input');
+function showDataInfo() {
+    const info = $('#data-info')
+    if (!info) return
+    const first = dataset.releases[0]
+    info.textContent = `Wydanie wykazu: ${formatDate(dataset.release)}. Historia zmian od ${formatDate(first)} (${dataset.releases.length} wydań, archiwum dane.gov.pl).`
+    $('#archive-link')?.setAttribute('href', ARCHIVE_URL)
+}
 
-  checkboxes.forEach((checkbox) => {
-    if (checkbox.id.match(category)) {
-      if (status == 'none') {
-        this.data = 'all';
-        checkbox.checked = true;
-      } else {
-        this.data = 'none';
-        checkbox.checked = false;
-      }
+async function start() {
+    // Pozycję mapy z adresu trzeba sprawdzić przed startem mapy, bo Mapbox zaraz zapisze własną.
+    const hasMapPosition = /^#\d/.test(window.location.hash)
+    state.theme = effectiveTheme()
+    state.filters = filtersFromParams(new URLSearchParams(window.location.search))
+
+    initPanel()
+    bindEvents()
+    syncThemeControls()
+    onSystemThemeChange(applyTheme)
+    initTooltips(document.body)
+    mapView.initMap($('#map'))
+    search = initSearch({
+        onApply: text => updateFilters(filters => { filters.q = text }, { fit: Boolean(text) }),
+        onOpenStation: id => openStation(id, { move: 'fly' }),
+        onOperator: name => {
+            state.view = 'list'
+            closeAllOverlays()
+            updateFilters(filters => { filters.operator = name; filters.q = '' }, { fit: true })
+        },
+        onFrequency: frequency => {
+            state.view = 'list'
+            closeAllOverlays()
+            updateFilters(filters => {
+                filters.q = ''
+                filters.frequencyMin = frequency
+                filters.frequencyMax = frequency
+            }, { fit: true })
+        }
+    })
+    showDisclaimer()
+
+    try {
+        await loadStations()
+    } catch (error) {
+        console.error(error)
+        $('#panel-body').innerHTML = '<div class="empty-state"><p><strong>Nie można wczytać danych.</strong></p><p class="muted">Sprawdź połączenie i odśwież stronę.</p></div>'
+        return
     }
-  });
-  applyFilterFromCheckboxes()
+    showDataInfo()
+    await runFilters()
+
+    const id = currentStationId()
+    if (id) await openStation(id, { initial: true, move: hasMapPosition ? 'none' : 'jump' })
 }
 
-function clearPopUps() {
-  for (let i in window.popups) {
-    window.popups[i].remove();
-  }
-}
+start()
 
-function detailsLegend() {
-
-  details.innerHTML = "Kliknij na mapę lub przybliż aby wyświelić więcej informacji."
-
-  let legend = document.createElement('ul');
-  legend.className = 'collection';
-  details.appendChild(legend);
-
-  for (let i in types) {
-    let type = types[i];
-    let legendOfType = document.createElement('li');
-    legendOfType.className = 'collection-item avatar'
-    legendOfType.innerHTML = `<div style="background-color: ${type.color}" class="circle"></div><span class="title">Typ ${i}: ${type.name} </span><p>${type.description}</p>`
-    legend.appendChild(legendOfType);
-  }
-
-  details.innerHTML += `Ostatnia aktualizacja: ${(new Date(sources.generated)).toISOString().split("T")[0]}`;
-}
-
-function addLayerFromHash(map, hash) {
-  map.addLayer({
-    id: hash,
-    type: "circle",
-    source: {
-      type: "geojson",
-      data: `./data/${hash}.geojson?t=${sources.generated}`
-    },
-    paint: paint
-  });
-  map.on('click', hash, (e) => {
-    loadDetails(e.features[0].properties.id);
-  });
-
-  map.on('mouseenter', hash, function () {
-    map.getCanvas().style.cursor = 'pointer';
-  });
-
-  map.on('mouseleave', hash, function () {
-    map.getCanvas().style.cursor = '';
-  });
+if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js'))
 }

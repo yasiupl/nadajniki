@@ -5,3 +5,9 @@
 [build.environment]
   NODE_VERSION = "22"
   NODE_OPTIONS = "--max_old_space_size=4096"
+
+# Karta stacji (/stacja/<id>) to ta sama aplikacja.
+[[redirects]]
+  from = "/stacja/*"
+  to = "/index.html"
+  status = 200

@@ -22,8 +22,7 @@ export function renderListView({ visible, total, unlocated, sort, limit, filters
                     ${LIST_SORTS.map(item => html`<option value="${item.key}"${item.key === sort ? ' selected' : ''}>${item.name}</option>`)}
                 </select>
             </label>
-            <button type="button" class="icon-button" data-action="export-sdr" data-scope="list" title="Eksport do SDR# (XML)" aria-label="Eksport do SDR#">${icon('settings_input_antenna')}</button>
-            <button type="button" class="icon-button" data-action="export-csv" data-scope="list" title="Eksport do CSV" aria-label="Eksport do CSV">${icon('file_download')}</button>
+            <button type="button" class="button" data-action="export-open" data-scope="view" title="Eksport do CHIRP, SDR# albo CSV">${icon('file_download')}Eksport</button>
         </div>
     </div>`
 
@@ -53,16 +52,15 @@ export function renderPickView({ stations }) {
         <ul class="station-list">${stations.map(station => stationItem(station))}</ul>`
 }
 
-export function renderProbeView({ lngLat, results, filtersActive }) {
+export function renderProbeView({ point, results, filtersActive }) {
     return html`<div class="view-header">
-            <button type="button" class="icon-button" data-action="close-overlay" aria-label="Zamknij">${icon('close')}</button>
-            <p class="view-title"><strong>Zasięg w punkcie</strong><br><span class="muted small">${formatDms(lngLat.lat, 'N', 'S')} ${formatDms(lngLat.lng, 'E', 'W')}</span></p>
+            <button type="button" class="icon-button" data-action="close-overlay" aria-label="Usuń punkt" title="Usuń punkt i pokaż wszystkie stacje">${icon('close')}</button>
+            <p class="view-title"><strong>Zasięg w punkcie</strong><br><span class="muted small">${formatDms(point.lat, 'N', 'S')} ${formatDms(point.lng, 'E', 'W')}</span></p>
             <div class="view-actions">
-                <button type="button" class="icon-button" data-action="export-sdr" data-scope="probe" title="Eksport do SDR# (XML)" aria-label="Eksport do SDR#">${icon('settings_input_antenna')}</button>
-                <button type="button" class="icon-button" data-action="export-csv" data-scope="probe" title="Eksport do CSV" aria-label="Eksport do CSV">${icon('file_download')}</button>
+                <button type="button" class="button" data-action="export-open" data-scope="probe" title="Eksport do CHIRP, SDR# albo CSV">${icon('file_download')}Eksport</button>
             </div>
         </div>
-        <p class="note">Lista pokazuje stacje, których obszar obsługi obejmuje ten punkt. Obszar obsługi to koło o promieniu z pozwolenia radiowego, a nie zmierzony zasięg sygnału.${filtersActive ? ' Lista uwzględnia aktywne filtry.' : ''}</p>
+        <p class="note">Mapa i lista pokazują tylko stacje, których obszar obsługi obejmuje ten punkt. Obszar obsługi to koło o promieniu z pozwolenia radiowego, a nie zmierzony zasięg sygnału.${filtersActive ? ' Lista uwzględnia też inne aktywne filtry.' : ''}</p>
         ${results.length
             ? html`<p class="muted small">${stationsLabel(results.length)}, od najbliższej:</p>
                 <ul class="station-list">${results.slice(0, 300).map(({ station, distance }) =>

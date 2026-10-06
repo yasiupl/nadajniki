@@ -29,7 +29,12 @@ export function html(strings, ...values) {
 
 // Tekst do wyszukiwania: małe litery, bez znaków diakrytycznych.
 export function normalize(text) {
-    return String(text ?? '').toLowerCase().replace(/ł/g, 'l').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    return String(text ?? '').toLowerCase().replace(/ł/g, 'l').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+// Tekst bez znaków diakrytycznych, z zachowaniem wielkości liter: "Łódź Żółć" -> "Lodz Zolc".
+export function toAscii(text) {
+    return String(text ?? '').replace(/ł/g, 'l').replace(/Ł/g, 'L').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
 // Fragment adresu URL: "PKP Polskie Linie Kolejowe, Kraków 1" -> "pkp-polskie-linie-kolejowe-krakow-1".

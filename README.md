@@ -17,14 +17,16 @@ Mapa pokazuje stacje z wykazu pozwoleń radiowych UKE dla klasycznych sieci radi
 ## Funkcje
 
 - **Karta stacji.** Karta pokazuje częstotliwości (nadawanie, odbiór, szerokość kanału), parametry anteny, rekordy wykazu, pozwolenia, operatora i lokalizację. Karta pokazuje też stacje na tej samej częstotliwości, historię zmian i liczbę wyświetleń.
-- **Lista stacji.** Lista pokazuje stacje w widoku mapy. Listę można sortować i eksportować do SDR# (XML) albo do CSV.
+- **Lista stacji.** Lista pokazuje stacje w widoku mapy. Listę można sortować.
+- **Eksport.** Przycisk „Eksport” otwiera okno z wyborem stacji i formatu: CHIRP (CSV), SDR# (XML) albo tabela CSV. Plik CHIRP ma wyłączone nadawanie na każdym kanale, bo częstotliwości służą tylko do nasłuchu.
+- **Ulubione.** Gwiazdka w karcie stacji dodaje stację do ulubionych. Filtr „Tylko ulubione” pokazuje te stacje, a okno eksportu zapisuje je do pliku. Lista ulubionych jest zapisana w przeglądarce.
 - **Link do stacji.** Adres `/stacja/<id>-<opis>` otwiera kartę stacji. Część `<opis>` jest tylko dla czytelnika.
 - **Wyszukiwarka.** Wyszukiwarka działa w przeglądarce, bez serwera. Składnię opisuje tabela poniżej.
-- **Filtry.** Filtry obejmują rodzaj sieci, pasmo, zakres częstotliwości, szerokość kanału, kategorię operatora, jednostkę UKE, wygasanie pozwolenia i stan w wykazie. Adres URL zapisuje filtry, więc link do widoku z filtrami też działa.
+- **Filtry.** Filtry obejmują ulubione, zasięg w punkcie, rodzaj sieci, pasmo, zakres częstotliwości, szerokość kanału, kategorię operatora, jednostkę UKE, wygasanie pozwolenia i stan w wykazie. Adres URL zapisuje filtry, więc link do widoku z filtrami też działa.
 - **Pasma.** Widok pasma pokazuje histogram zajętości i listę częstotliwości nadawczych.
 - **Analiza.** Wykresy pokazują rozkłady dla stacji, które spełniają filtry: rodzaje sieci, pasma, szerokości kanałów, największe sieci, kategorie, wygasanie pozwoleń i jednostki UKE.
 - **Zmiany.** Widok porównuje kolejne wydania wykazu: stacje nowe, usunięte, zmienione i przeniesione.
-- **Warstwy mapy.** Mapa pokazuje obszary obsługi, gęstość stacji i etykiety częstotliwości. Narzędzie „Zasięg w punkcie” pokazuje stacje, których obszar obsługi obejmuje wybrany punkt.
+- **Warstwy mapy.** Mapa pokazuje obszary obsługi, gęstość stacji i etykiety częstotliwości. Narzędzie „Zasięg w punkcie” to filtr: mapa, lista, analizy i eksport pokazują tylko stacje, których obszar obsługi obejmuje wybrany punkt.
 - **Wygląd.** Strona ma tryb automatyczny, jasny i ciemny. Przycisk na pasku górnym przełącza tryb jasny i ciemny. Menu ma wszystkie trzy tryby. Tryb automatyczny przyjmuje ustawienie systemu lub przeglądarki. Przeglądarka zapamiętuje wybór.
 
 Składnia wyszukiwarki:

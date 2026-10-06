@@ -65,7 +65,7 @@ function columnMap(header) {
 
 function clean(value) {
     const text = value == null ? '' : String(value)
-    return /\s\s|[\t\n\r ]/.test(text) ? text.replace(/\s+/g, ' ').trim() : text.trim()
+    return /\s\s|[\t\n\r\u00a0]/.test(text) ? text.replace(/\s+/g, ' ').trim() : text.trim()
 }
 
 // Pamięć podręczna dla wartości, które powtarzają się w tysiącach rekordów.

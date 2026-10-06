@@ -1,9 +1,9 @@
 import './style.scss'
 import { ARCHIVE_URL, SITE_TITLE } from './js/config.js'
-import { formatDate, formatFrequency, distanceMeters, stationsLabel } from './js/format.js'
-import { filtersFromParams, emptyFilters, createContext, applyFilters } from './js/filters.js'
+import { formatDate, formatFrequency, distanceMeters } from './js/format.js'
+import { filtersFromParams, emptyFilters, createContext, applyFilters, activeFilterCount } from './js/filters.js'
 import {
-    dataset, loadStations, loadHistory, loadPopular, loadDetails, resolveStation, stationPath,
+    dataset, loadStations, loadHistory, loadPopular, loadDetails, resolveStation, stationPath, stationById,
     stationsOnFrequency, ensureSearchIndex
 } from './js/data.js'
 import { state, on } from './js/store.js'
@@ -14,8 +14,9 @@ import {
 import { initSearch } from './js/search.js'
 import { initTooltips } from './js/charts.js'
 import { showStationUrl, clearStationUrl, syncFiltersUrl, currentStationId, onRouteChange } from './js/router.js'
-import { toSdrSharp, toCsv } from './js/export.js'
-import { $, toast, copyText, downloadFile, isMobile } from './js/ui.js'
+import { openExportDialog } from './js/export-dialog.js'
+import { favoriteIds, toggleFavorite, onFavoritesChange } from './js/favorites.js'
+import { $, toast, copyText, isMobile } from './js/ui.js'
 import { themePreference, effectiveTheme, saveThemePreference, onSystemThemeChange } from './js/theme.js'
 
 let search = null
@@ -36,19 +37,32 @@ async function runFilters({ fit = false } = {}) {
     }
     const base = filters.status === 'removed' ? history.removed : dataset.stations
     if (filters.q.trim()) ensureSearchIndex(base)
-    const context = createContext(filters, { changes: history?.changes })
+    const context = createContext(filters, { changes: history?.changes, favorites: favoriteIds() })
     const result = applyFilters(base, filters, context)
     state.filtered = result.stations
     state.facets = result.facets
     ui.listLimit = PAGE_SIZE
     ui.changesLimit = PAGE_SIZE
     mapView.setStations(state.filtered)
+    syncPoint()
     if (state.layers.coverage) updateCoverage()
     syncFiltersUrl(filters)
     search?.setValue(filters.q)
     renderDrawer()
     scheduleRender()
     if (fit) mapView.fitToStations(state.filtered)
+}
+
+// Znacznik punktu i widok "Zasięg w punkcie" istnieją tylko razem z filtrem punktu.
+function syncPoint() {
+    const point = state.filters.point
+    if (point) {
+        mapView.showProbe(point)
+        return
+    }
+    mapView.clearProbe()
+    if (state.overlay?.type === 'probe') state.overlay = null
+    if (state.overlay?.back?.type === 'probe') state.overlay.back = null
 }
 
 function updateFilters(change, options) {
@@ -122,47 +136,40 @@ async function openStation(target, { initial = false, move = 'ensure' } = {}) {
     loadPopular().then(refresh)
 }
 
-function closeOverlay() {
+// keepPoint: widok "Zasięg w punkcie" znika, ale filtr punktu zostaje (np. przy zmianie zakładki).
+function closeOverlay({ keepPoint = false } = {}) {
     const overlay = state.overlay
     if (!overlay) return
     if (overlay.type === 'detail') {
         mapView.setSelection(null)
         clearStationUrl()
         state.overlay = overlay.back || null
-        if (state.overlay?.type === 'probe') {
-            mapView.setProbeStations(state.overlay.results.map(result => result.station))
-        }
     } else {
-        if (overlay.type === 'probe') mapView.clearProbe()
         state.overlay = null
+        if (overlay.type === 'probe' && !keepPoint) {
+            updateFilters(filters => { filters.point = null })
+            return
+        }
     }
     scheduleRender()
 }
 
-// Zamyka kartę i nakładki pod nią (np. kartę otwartą z widoku "Zasięg w punkcie").
+// Zamyka kartę i nakładki pod nią (np. kartę otwartą z widoku "Zasięg w punkcie"). Filtr punktu zostaje.
 function closeAllOverlays() {
-    while (state.overlay) closeOverlay()
+    while (state.overlay) closeOverlay({ keepPoint: true })
 }
 
+// "Zasięg w punkcie" to filtr: zostają tylko stacje, których obszar obsługi obejmuje punkt.
 function probe(lngLat) {
-    const results = []
-    for (const station of state.filtered) {
-        if (station.removed || station.lat === null || !(station.radius > 0)) continue
-        const distance = distanceMeters(lngLat.lat, lngLat.lng, station.lat, station.lon)
-        if (distance <= station.radius * 1000) results.push({ station, distance })
-    }
-    results.sort((a, b) => a.distance - b.distance)
     if (state.overlay?.type === 'detail') {
         mapView.setSelection(null)
         clearStationUrl()
     }
-    if (state.overlay?.type === 'probe') mapView.clearProbe()
-    state.overlay = { type: 'probe', lngLat: { lng: lngLat.lng, lat: lngLat.lat }, results }
-    mapView.showProbe(lngLat)
-    mapView.setProbeStations(results.map(result => result.station))
+    state.overlay = { type: 'probe' }
     if (isMobile() && ui.sheet === 'peek') setSheet('half')
     setToolPressed('probe', false)
-    scheduleRender()
+    const round = value => Math.round(value * 1e5) / 1e5
+    updateFilters(filters => { filters.point = { lat: round(lngLat.lat), lng: round(lngLat.lng) } })
 }
 
 async function shareStation(station) {
@@ -178,16 +185,36 @@ async function shareStation(station) {
     copyText(url, 'Skopiowano link do stacji.')
 }
 
-function exportStations(kind, scope) {
-    const stations = scope === 'probe' ? (state.overlay?.results || []).map(result => result.station) : stationsInView()
-    if (!stations.length) {
-        toast('Brak stacji do eksportu.')
-        return
+// Okno eksportu. Zakresy "W zasięgu punktu" i "Ulubione" są zawsze na liście; pusty zakres jest nieaktywny.
+// Zaznaczony zakres zależy od miejsca, z którego użytkownik otworzył okno.
+function openExport(origin) {
+    const scopes = []
+    const overlay = state.overlay
+    if (origin === 'station' && overlay?.station) {
+        scopes.push({ key: 'station', label: 'Ta stacja', stations: [overlay.station] })
     }
-    const date = dataset.release || 'dane'
-    if (kind === 'sdr') downloadFile(`nadajniki-${date}-sdrsharp.xml`, toSdrSharp(stations), 'application/xml')
-    else downloadFile(`nadajniki-${date}.csv`, toCsv(stations, window.location.origin), 'text/csv;charset=utf-8')
-    toast(`Wyeksportowano: ${stationsLabel(stations.length)}.`)
+    if (state.mapReady) scopes.push({ key: 'view', label: 'Stacje w widoku mapy', stations: stationsInView() })
+    const point = state.filters.point
+    scopes.push({
+        key: 'range',
+        label: 'Stacje w zasięgu wybranego punktu',
+        stations: point ? state.filtered : [],
+        disabled: point ? '' : 'Najpierw wybierz punkt narzędziem „Zasięg w punkcie”.'
+    })
+    const favorites = [...favoriteIds()].map(stationById).filter(Boolean)
+    scopes.push({
+        key: 'favorites',
+        label: 'Ulubione stacje',
+        stations: favorites,
+        disabled: favorites.length ? '' : 'Brak ulubionych. Gwiazdka w karcie stacji dodaje stację do ulubionych.'
+    })
+    scopes.push({
+        key: 'filtered',
+        label: activeFilterCount(state.filters) ? 'Wszystkie stacje, które spełniają filtry' : 'Wszystkie stacje w wykazie',
+        stations: state.filtered
+    })
+    const selected = { station: 'station', probe: 'range' }[origin] || (state.mapReady ? 'view' : 'filtered')
+    openExportDialog(scopes, selected)
 }
 
 // --- Warstwy mapy ---
@@ -288,6 +315,7 @@ const actions = {
     'remove-query': () => updateFilters(filters => { filters.q = '' }),
     'remove-operator': () => updateFilters(filters => { filters.operator = '' }),
     'remove-range': () => setFrequencyRange(null, null, { fit: false }),
+    'remove-point': () => updateFilters(filters => { filters.point = null }),
     'clear-filters': () => updateFilters(filters => Object.assign(filters, emptyFilters())),
     'fit-filtered': () => mapView.fitToStations(state.filtered),
     'list-more': () => { ui.listLimit += PAGE_SIZE; scheduleRender() },
@@ -302,8 +330,14 @@ const actions = {
         }, { fit: true })
     },
     'retry-history': () => { ui.historyError = false; showView('changes') },
-    'export-sdr': element => exportStations('sdr', element.dataset.scope),
-    'export-csv': element => exportStations('csv', element.dataset.scope),
+    'export-open': element => openExport(element.dataset.scope),
+    'toggle-favorite': () => {
+        const station = state.overlay?.station
+        if (!station) return
+        const added = toggleFavorite(station.id)
+        toast(added ? 'Dodano stację do ulubionych.' : 'Usunięto stację z ulubionych.')
+    },
+    'set-favorites': element => updateFilters(filters => { filters.favorites = element.dataset.value === '1' }),
     'open-filters': () => openDrawer('filters'),
     'open-menu': () => openDrawer('menu'),
     'close-drawer': closeDrawers,
@@ -375,6 +409,8 @@ function bindEvents() {
     })
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
+            // Otwarte okno dialogowe zamyka się samo. Karta stacji pod nim zostaje.
+            if (document.querySelector('dialog[open]')) return
             if (document.querySelector('.drawer.open')) closeDrawers()
             else if (mapView.isPickingProbe()) actions['probe-pick']()
             else if (state.overlay && !event.target.closest('input, select, textarea')) closeOverlay()
@@ -485,6 +521,14 @@ async function start() {
     bindEvents()
     syncThemeControls()
     onSystemThemeChange(applyTheme)
+    // Zmiana listy ulubionych zmienia wynik filtra "Tylko ulubione" i znaczniki na liście.
+    onFavoritesChange(() => {
+        if (state.filters.favorites) runFilters()
+        else {
+            renderDrawer()
+            scheduleRender()
+        }
+    })
     initTooltips(document.body)
     mapView.initMap($('#map'))
     search = initSearch({
@@ -519,6 +563,12 @@ async function start() {
 
     const id = currentStationId()
     if (id) await openStation(id, { initial: true, move: hasMapPosition ? 'none' : 'jump' })
+    else if (state.filters.point) {
+        // Link z punktem: widok "Zasięg w punkcie" i mapa wokół punktu.
+        state.overlay = { type: 'probe' }
+        if (!hasMapPosition) mapView.flyToPoint(state.filters.point, 10)
+        scheduleRender()
+    }
 }
 
 start()

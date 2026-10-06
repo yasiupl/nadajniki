@@ -3,6 +3,7 @@ import { typeInfo } from '../config.js'
 import { html, formatFrequency, formatDate, formatDistance } from '../format.js'
 import { dataset } from '../data.js'
 import { state } from '../store.js'
+import { isFavorite } from '../favorites.js'
 
 export const typeColor = code => typeInfo(code)[state.theme]
 
@@ -36,6 +37,7 @@ export function stationItem(station, { distance = null, note = '' } = {}) {
                 ${frequencyChips(station)}
             </span>
             <span class="station-item-meta">
+                ${isFavorite(station.id) ? html`<span class="favorite-mark" title="Ulubiona">${icon('star')}</span>` : ''}
                 ${historyBadges(station)}
                 ${distance !== null ? html`<span class="muted small">${formatDistance(distance)}</span>` : ''}
                 ${note ? html`<span class="muted small">${note}</span>` : ''}

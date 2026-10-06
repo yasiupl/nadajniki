@@ -11,6 +11,7 @@ import { renderBandsView, renderAnalysisView } from './views/analysis.js'
 import { renderChangesView } from './views/changes.js'
 import { renderFiltersDrawer, renderActiveFilters, filtersBadge } from './filters-drawer.js'
 import { $, isMobile } from './ui.js'
+import { favoriteIds } from './favorites.js'
 
 const PAGE = 100
 const PANEL_WIDTH = 400
@@ -52,6 +53,14 @@ export function stationsInView() {
     if (!bounds) return state.filtered
     return state.filtered.filter(station => station.lat !== null &&
         station.lat >= bounds.south && station.lat <= bounds.north && station.lon >= bounds.west && station.lon <= bounds.east)
+}
+
+// Stacje, które spełniają filtry (z filtrem punktu), od najbliższej punktu.
+export function pointResults() {
+    const point = state.filters.point
+    if (!point) return []
+    return state.filtered.map(station => ({ station, distance: distanceMeters(point.lat, point.lng, station.lat, station.lon) }))
+        .sort((a, b) => a.distance - b.distance)
 }
 
 export const scopedStations = () => state.scope === 'view' ? stationsInView() : state.filtered
@@ -100,7 +109,7 @@ function changesInput() {
     const latest = history.releases[history.releases.length - 1]?.date
     if (ui.changesRelease === null) ui.changesRelease = latest
     const release = ui.changesRelease
-    const context = createContext(state.filters, { changes: history.changes })
+    const context = createContext(state.filters, { changes: history.changes, favorites: favoriteIds() })
     const keep = station => matches(station, state.filters, context, 'status')
     const current = dataset.stations.filter(keep)
     const lists = {
@@ -137,8 +146,9 @@ function content() {
         return renderDetailView({ ...overlay, history: dataset.history, popular: dataset.popular })
     }
     if (overlay?.type === 'pick') return renderPickView(overlay)
-    if (overlay?.type === 'probe') {
-        return renderProbeView({ ...overlay, filtersActive: activeFilterCount(state.filters) > 0 })
+    if (overlay?.type === 'probe' && state.filters.point) {
+        // Licznik filtrów obejmuje sam punkt, więc "inne filtry" to więcej niż 1.
+        return renderProbeView({ point: state.filters.point, results: pointResults(), filtersActive: activeFilterCount(state.filters) > 1 })
     }
     switch (state.view) {
         case 'bands':

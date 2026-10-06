@@ -1,6 +1,7 @@
 // Model filtrów, dopasowanie stacji i zapis filtrów w adresie URL. Moduł nie używa DOM.
 import { BANDS, BANDWIDTHS, STATUSES, bandBit, bandwidthKey } from './config.js'
 import { parseQuery, isEmptyQuery, matchStation } from './query.js'
+import { distanceMeters } from './format.js'
 
 // Pusty zbiór oznacza brak ograniczenia (wszystkie wartości).
 export function emptyFilters() {
@@ -16,8 +17,18 @@ export function emptyFilters() {
         frequencyMax: null,
         status: '',
         release: '',
-        expiring: 0
+        expiring: 0,
+        // Tylko ulubione stacje (lista z favorites.js, zapisana w przeglądarce).
+        favorites: false,
+        // Punkt narzędzia "Zasięg w punkcie": { lat, lng } albo null.
+        point: null
     }
+}
+
+// Czy obszar obsługi stacji (koło o promieniu z pozwolenia) obejmuje punkt.
+export function coversPoint(station, point) {
+    if (station.lat === null || station.lat === undefined || !(station.radius > 0)) return false
+    return distanceMeters(point.lat, point.lng, station.lat, station.lon) <= station.radius * 1000
 }
 
 // Fasety: filtry z wieloma wartościami. Licznik fasety pomija jej własny filtr.
@@ -40,7 +51,7 @@ function intersects(values, selected) {
 }
 
 // Kontekst dopasowania: zapytanie po parsowaniu, granica dat wygasania, zbiory zmian z historii.
-export function createContext(filters, { now = new Date(), changes = null } = {}) {
+export function createContext(filters, { now = new Date(), changes = null, favorites = null } = {}) {
     const query = parseQuery(filters.q)
     let expiryLimit = ''
     if (filters.expiring) {
@@ -48,7 +59,7 @@ export function createContext(filters, { now = new Date(), changes = null } = {}
         limit.setMonth(limit.getMonth() + filters.expiring)
         expiryLimit = limit.toISOString().slice(0, 10)
     }
-    return { query: isEmptyQuery(query) ? null : query, expiryLimit, changes }
+    return { query: isEmptyQuery(query) ? null : query, expiryLimit, changes, favorites }
 }
 
 // Czy stacja spełnia filtry. Parametr skip pomija jedną fasetę (do liczników faset).
@@ -58,6 +69,8 @@ export function matches(station, filters, context, skip = '') {
         if (!intersects(facetValues(station, facet), filters[facet])) return false
     }
     if (filters.operator && station.operator.name !== filters.operator) return false
+    if (filters.favorites && !context.favorites?.has(station.id)) return false
+    if (filters.point && !coversPoint(station, filters.point)) return false
     if (filters.frequencyMin !== null || filters.frequencyMax !== null) {
         const min = filters.frequencyMin ?? -Infinity
         const max = filters.frequencyMax ?? Infinity
@@ -116,6 +129,8 @@ export function activeFilterCount(filters) {
     if (filters.frequencyMin !== null || filters.frequencyMax !== null) count++
     if (filters.status) count++
     if (filters.expiring) count++
+    if (filters.favorites) count++
+    if (filters.point) count++
     return count
 }
 
@@ -131,7 +146,9 @@ const PARAMS = {
     frequency: 'f',
     status: 'stan',
     release: 'wydanie',
-    expiring: 'wygasa'
+    expiring: 'wygasa',
+    favorites: 'ulubione',
+    point: 'punkt'
 }
 
 const toNumber = text => {
@@ -156,6 +173,8 @@ export function filtersToParams(filters) {
         if (filters.release) params.set(PARAMS.release, filters.release)
     }
     if (filters.expiring) params.set(PARAMS.expiring, String(filters.expiring))
+    if (filters.favorites) params.set(PARAMS.favorites, '1')
+    if (filters.point) params.set(PARAMS.point, `${filters.point.lat.toFixed(5)},${filters.point.lng.toFixed(5)}`)
     return params
 }
 
@@ -182,6 +201,11 @@ export function filtersFromParams(params) {
     }
     const expiring = parseInt(params.get(PARAMS.expiring) || '0', 10)
     filters.expiring = [6, 12, 24].includes(expiring) ? expiring : 0
+    filters.favorites = params.get(PARAMS.favorites) === '1'
+    const [lat, lng] = (params.get(PARAMS.point) || '').split(',').map(toNumber)
+    if (lat !== null && lng !== null && lat !== undefined && lng !== undefined && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+        filters.point = { lat, lng }
+    }
     return filters
 }
 

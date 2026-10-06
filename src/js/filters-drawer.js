@@ -1,10 +1,11 @@
 // Panel filtrów i pasek aktywnych filtrów.
 import { NETWORK_TYPES, BANDS, BANDWIDTHS, OFFICES, STATUSES, typeInfo } from './config.js'
-import { html, formatNumber, formatDate, formatFrequency, stationsLabel } from './format.js'
+import { html, formatNumber, formatDate, formatFrequency, formatDms, stationsLabel } from './format.js'
 import { activeFilterCount } from './filters.js'
 import { dataset } from './data.js'
 import { state } from './store.js'
 import { typeColor, icon } from './views/common.js'
+import { favoriteIds } from './favorites.js'
 
 function chip(facet, value, label, count, { swatch = '', title = '' } = {}) {
     const selected = state.filters[facet].has(value)
@@ -33,7 +34,14 @@ export function renderFiltersDrawer() {
     const offices = Object.keys(OFFICES).filter(code => facetCount('offices', code) || filters.offices.has(code))
     const releases = dataset.history?.releases || []
 
+    const favoritesCount = favoriteIds().size
     return html`
+        ${group('Ulubione', html`<div class="chip-group">
+                <button type="button" class="filter-chip${filters.favorites ? ' selected' : ''}" data-action="set-favorites"
+                    data-value="${filters.favorites ? '' : '1'}" aria-pressed="${filters.favorites}">
+                    ${icon('star')}<span>Tylko ulubione</span><span class="count">${formatNumber(favoritesCount)}</span>
+                </button>
+            </div>`, { hint: 'Gwiazdka w karcie stacji dodaje stację do ulubionych. Lista jest zapisana w tej przeglądarce.' })}
         ${group('Stan w wykazie', html`<div class="segmented wrap" role="group" aria-label="Stan w wykazie">
                 <button type="button" data-action="set-status" data-value="" aria-pressed="${!filters.status}">Wszystkie</button>
                 ${STATUSES.map(status => html`<button type="button" data-action="set-status" data-value="${status.key}" aria-pressed="${filters.status === status.key}">${status.name}</button>`)}
@@ -78,6 +86,8 @@ export function renderActiveFilters() {
         <span>${label}</span>${icon('close')}</button>`)
     if (filters.q.trim()) add(`„${filters.q.trim()}”`, 'remove-query')
     if (filters.operator) add(`Operator: ${filters.operator}`, 'remove-operator')
+    if (filters.favorites) add('Ulubione', 'set-favorites', '')
+    if (filters.point) add(`W zasięgu punktu ${formatDms(filters.point.lat, 'N', 'S')} ${formatDms(filters.point.lng, 'E', 'W')}`, 'remove-point')
     for (const code of filters.types) add(typeInfo(code).name, 'toggle-facet', code, 'types')
     for (const key of filters.bands) add(BANDS.find(band => band.key === key)?.name || key, 'toggle-facet', key, 'bands')
     if (filters.frequencyMin !== null || filters.frequencyMax !== null) {

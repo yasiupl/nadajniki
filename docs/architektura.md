@@ -160,6 +160,30 @@ Filtry i widok mapy zmieniają adres przez `replaceState`, więc nie dają odsł
 
 Skrypt `fetch-stats` sumuje odsłony według identyfikatora stacji. Odsłony starego identyfikatora przeniesionej stacji skrypt dodaje do nowego identyfikatora.
 
+### Cele w Plausible
+
+Moduł `src/js/analytics.js` wysyła zdarzenia Plausible, gdy użytkownik używa funkcji strony. Każde zdarzenie może być celem (konwersją) w Plausible. Właściwości zdarzeń nie zawierają tekstu wpisanego przez użytkownika.
+
+| Cel (nazwa zdarzenia) | Kiedy | Właściwości |
+| --- | --- | --- |
+| `Wyszukiwanie` | Zatwierdzenie zapytania albo wybór podpowiedzi. | `rodzaj`: `tekst`, `stacja`, `operator`, `częstotliwość` |
+| `Filtr` | Dodanie filtra. | `filtr`: `rodzaj sieci`, `pasmo`, `kategoria`, `szerokość kanału`, `jednostka UKE`, `częstotliwość`, `zakres częstotliwości`, `operator`, `stan w wykazie`, `wygasanie pozwolenia`, `ulubione` |
+| `Eksport` | Pobranie pliku w oknie eksportu. | `format`: `CHIRP`, `SDR#`, `Tabela CSV`; `zakres`: `stacja`, `widok mapy`, `zasięg punktu`, `ulubione`, `filtry` |
+| `Ulubione` | Gwiazdka w karcie stacji. | `akcja`: `dodanie`, `usunięcie` |
+| `Zasięg w punkcie` | Wybór punktu na mapie. | brak |
+| `Udostępnienie` | Udostępnienie linku do stacji. | `sposob`: `menu udostępniania`, `kopia linku` |
+| `Kopiowanie częstotliwości` | Przycisk „Kopiuj” w karcie stacji. | brak |
+| `Zakładka` | Kliknięcie zakładki panelu. | `zakladka`: `Stacje`, `Pasma`, `Analiza`, `Zmiany` |
+| `Warstwa mapy` | Włączenie warstwy mapy. | `warstwa`: `obszary obsługi`, `gęstość`, `etykiety` |
+| `Motyw` | Zmiana motywu. | `motyw`: `automatyczny`, `jasny`, `ciemny` |
+
+Konfiguracja w Plausible (ustawienia strony `nadajniki.yasiu.pl`):
+
+1. Otwórz „Goals” i dodaj cel typu „Custom event” dla każdej nazwy z tabeli. Nazwa celu musi być taka sama jak nazwa zdarzenia.
+2. Dodaj cel typu „Pageview” ze ścieżką `/stacja/**`. Ten cel liczy otwarcia kart stacji.
+3. Otwórz „Custom properties” i dodaj właściwości: `rodzaj`, `filtr`, `format`, `zakres`, `akcja`, `sposob`, `zakladka`, `warstwa`, `motyw`.
+
+Plausible pokazuje zdarzenie w raporcie dopiero po dodaniu celu. Zdarzenia sprzed dodania celu Plausible też zapisuje.
 ## Mapa
 
 Mapa używa Mapbox GL, stylów `light-v11` i `dark-v11` oraz odwzorowania Merkatora.
@@ -238,6 +262,7 @@ Polecenie `npm test` uruchamia testy jednostkowe (wbudowany moduł testów Node.
 
 - `test/data-pipeline.test.mjs`: czytnik XLSX, parsery wartości, grupowanie stacji, sygnatury, historia zmian, przeniesienia, współrzędne.
 - `test/search-filters.test.mjs`: parser zapytania, dopasowanie stacji, filtry i fasety, filtr ulubionych, filtr punktu, zapis filtrów w adresie URL, formatowanie, ścieżki stacji.
+- `test/analytics.test.mjs`: zdarzenia Plausible.
 - `test/export.test.mjs`: nazwy kanałów CHIRP, plik CHIRP (kanały tylko do odbioru, krok strojenia, tryb, limit kanałów), pliki SDR# i CSV.
 
 Testy nie sprawdzają interfejsu w przeglądarce. Po zmianie interfejsu uruchom `npm run serve` i sprawdź stronę w przeglądarce.

@@ -75,6 +75,8 @@ Format plików i algorytm historii zmian opisuje dokument [docs/dane.md](docs/da
 
 Plausible liczy odsłony adresów `/stacja/<id>`. Raport „Top Pages” pokazuje więc wejścia na każdą stację. Raport „Entry Pages” pokazuje wejścia z linków.
 
+Strona wysyła też zdarzenia Plausible dla funkcji: wyszukiwanie, filtry, eksport, ulubione, zasięg w punkcie, udostępnienie i inne. Te zdarzenia mogą być celami (konwersjami). Listę celów i konfigurację Plausible opisuje dokument [docs/architektura.md](docs/architektura.md#cele-w-plausible).
+
 Z kluczem API Plausible polecenie `npm run fetch-stats` zapisuje plik `popular.json`. Karta stacji pokazuje wtedy liczbę wyświetleń, a widok „Analiza” pokazuje najczęściej oglądane stacje. Bez klucza skrypt nic nie robi i strona działa bez statystyk.
 
 ## Wdrożenie

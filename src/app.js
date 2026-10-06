@@ -16,6 +16,7 @@ import { initTooltips } from './js/charts.js'
 import { showStationUrl, clearStationUrl, syncFiltersUrl, currentStationId, onRouteChange } from './js/router.js'
 import { openExportDialog } from './js/export-dialog.js'
 import { favoriteIds, toggleFavorite, onFavoritesChange } from './js/favorites.js'
+import { GOALS, track } from './js/analytics.js'
 import { $, toast, copyText, isMobile } from './js/ui.js'
 import { themePreference, effectiveTheme, saveThemePreference, onSystemThemeChange } from './js/theme.js'
 
@@ -70,11 +71,23 @@ function updateFilters(change, options) {
     return runFilters(options)
 }
 
+// Nazwy filtrów we właściwości "filtr" zdarzenia Plausible.
+const FILTER_NAMES = {
+    types: 'rodzaj sieci',
+    bands: 'pasmo',
+    categories: 'kategoria',
+    bandwidths: 'szerokość kanału',
+    offices: 'jednostka UKE'
+}
+
 function toggleFacet(facet, value) {
     updateFilters(filters => {
         const set = filters[facet]
         if (set.has(value)) set.delete(value)
-        else set.add(value)
+        else {
+            set.add(value)
+            track(GOALS.filter, { filtr: FILTER_NAMES[facet] })
+        }
     })
 }
 
@@ -168,6 +181,7 @@ function probe(lngLat) {
     state.overlay = { type: 'probe' }
     if (isMobile() && ui.sheet === 'peek') setSheet('half')
     setToolPressed('probe', false)
+    track(GOALS.point)
     const round = value => Math.round(value * 1e5) / 1e5
     updateFilters(filters => { filters.point = { lat: round(lngLat.lat), lng: round(lngLat.lng) } })
 }
@@ -177,12 +191,14 @@ async function shareStation(station) {
     if (navigator.share && isMobile()) {
         try {
             await navigator.share({ title: `${station.operator.name} – ${station.name}`, url })
+            track(GOALS.share, { sposob: 'menu udostępniania' })
             return
         } catch (error) {
             if (error.name === 'AbortError') return
         }
     }
     copyText(url, 'Skopiowano link do stacji.')
+    track(GOALS.share, { sposob: 'kopia linku' })
 }
 
 // Okno eksportu. Zakresy "W zasięgu punktu" i "Ulubione" są zawsze na liście; pusty zakres jest nieaktywny.
@@ -229,7 +245,10 @@ function updateCoverage() {
     if (shown < total) toast(`Obszary obsługi: ${shown} z ${total} stacji najbliżej środka mapy. Zawęź filtry, aby zobaczyć wszystkie.`, { timeout: 6000 })
 }
 
+const LAYER_NAMES = { coverage: 'obszary obsługi', heat: 'gęstość', labels: 'etykiety' }
+
 function setLayer(name, visible) {
+    if (visible) track(GOALS.layer, { warstwa: LAYER_NAMES[name] })
     mapView.setLayerVisibility(name, visible)
     if (name === 'coverage') {
         if (visible) updateCoverage()
@@ -263,7 +282,10 @@ function applyTheme() {
     scheduleRender()
 }
 
+const THEME_NAMES = { auto: 'automatyczny', light: 'jasny', dark: 'ciemny' }
+
 function setThemePreference(preference) {
+    track(GOALS.theme, { motyw: THEME_NAMES[preference] })
     saveThemePreference(preference)
     applyTheme()
 }
@@ -278,25 +300,33 @@ const actions = {
     'share-station': () => state.overlay?.station && shareStation(state.overlay.station),
     'copy-frequencies': () => {
         const station = state.overlay?.station
-        if (station) copyText(station.tx.map(formatFrequency).join('\n'), 'Skopiowano częstotliwości nadawcze.')
+        if (!station) return
+        copyText(station.tx.map(formatFrequency).join('\n'), 'Skopiowano częstotliwości nadawcze.')
+        track(GOALS.copyFrequencies)
     },
     'copy-text': element => copyText(element.dataset.value),
     'filter-frequency': element => {
         const value = parseFloat(element.dataset.value)
         closeAllOverlays()
         state.view = 'list'
+        track(GOALS.filter, { filtr: 'częstotliwość' })
         setFrequencyRange(value, value)
     },
     'filter-range': element => {
         const [min, max] = element.dataset.value.split('-').map(Number)
+        track(GOALS.filter, { filtr: 'zakres częstotliwości' })
         setFrequencyRange(min, max, { fit: false })
     },
     'filter-operator': element => {
         closeAllOverlays()
         state.view = 'list'
+        track(GOALS.filter, { filtr: 'operator' })
         updateFilters(filters => { filters.operator = element.dataset.value }, { fit: true })
     },
-    'filter-band': element => updateFilters(filters => { filters.bands = new Set([element.dataset.value]) }),
+    'filter-band': element => {
+        track(GOALS.filter, { filtr: 'pasmo' })
+        updateFilters(filters => { filters.bands = new Set([element.dataset.value]) })
+    },
     'set-band': element => { ui.bandKey = element.dataset.value; ui.bandLimit = PAGE_SIZE; scheduleRender() },
     'band-sort': element => { ui.bandSort = element.dataset.value; scheduleRender() },
     'band-more': () => { ui.bandLimit += PAGE_SIZE; scheduleRender() },
@@ -307,11 +337,17 @@ const actions = {
     'toggle-category': element => toggleFacet('categories', element.dataset.value),
     'toggle-office': element => toggleFacet('offices', element.dataset.value),
     'toggle-facet': element => toggleFacet(element.dataset.facet, element.dataset.value),
-    'set-status': element => updateFilters(filters => {
-        filters.status = element.dataset.value
-        filters.release = filters.status ? dataset.release : ''
-    }),
-    'set-expiring': element => updateFilters(filters => { filters.expiring = parseInt(element.dataset.value, 10) || 0 }),
+    'set-status': element => {
+        if (element.dataset.value) track(GOALS.filter, { filtr: 'stan w wykazie' })
+        updateFilters(filters => {
+            filters.status = element.dataset.value
+            filters.release = filters.status ? dataset.release : ''
+        })
+    },
+    'set-expiring': element => {
+        if (element.dataset.value !== '0') track(GOALS.filter, { filtr: 'wygasanie pozwolenia' })
+        updateFilters(filters => { filters.expiring = parseInt(element.dataset.value, 10) || 0 })
+    },
     'remove-query': () => updateFilters(filters => { filters.q = '' }),
     'remove-operator': () => updateFilters(filters => { filters.operator = '' }),
     'remove-range': () => setFrequencyRange(null, null, { fit: false }),
@@ -336,8 +372,12 @@ const actions = {
         if (!station) return
         const added = toggleFavorite(station.id)
         toast(added ? 'Dodano stację do ulubionych.' : 'Usunięto stację z ulubionych.')
+        track(GOALS.favorite, { akcja: added ? 'dodanie' : 'usunięcie' })
     },
-    'set-favorites': element => updateFilters(filters => { filters.favorites = element.dataset.value === '1' }),
+    'set-favorites': element => {
+        if (element.dataset.value === '1') track(GOALS.filter, { filtr: 'ulubione' })
+        updateFilters(filters => { filters.favorites = element.dataset.value === '1' })
+    },
     'open-filters': () => openDrawer('filters'),
     'open-menu': () => openDrawer('menu'),
     'close-drawer': closeDrawers,
@@ -433,12 +473,16 @@ function bindEvents() {
         const read = name => parseFloat(String(form.elements[name].value).replace(',', '.'))
         let [min, max] = [read('min'), read('max')]
         if (Number.isFinite(min) && Number.isFinite(max) && min > max) [min, max] = [max, min]
+        if (Number.isFinite(min) || Number.isFinite(max)) track(GOALS.filter, { filtr: 'zakres częstotliwości' })
         setFrequencyRange(min, max)
         if (isMobile()) closeDrawers()
     })
 
     for (const tab of document.querySelectorAll('.panel-tabs [data-view]')) {
-        tab.addEventListener('click', () => showView(tab.dataset.view))
+        tab.addEventListener('click', () => {
+            track(GOALS.tab, { zakladka: tab.textContent.trim() })
+            showView(tab.dataset.view)
+        })
     }
     $('#scrim').addEventListener('click', closeDrawers)
     $('#filters-apply').addEventListener('click', closeDrawers)
@@ -532,14 +576,22 @@ async function start() {
     initTooltips(document.body)
     mapView.initMap($('#map'))
     search = initSearch({
-        onApply: text => updateFilters(filters => { filters.q = text }, { fit: Boolean(text) }),
-        onOpenStation: id => openStation(id, { move: 'fly' }),
+        onApply: text => {
+            if (text) track(GOALS.search, { rodzaj: 'tekst' })
+            updateFilters(filters => { filters.q = text }, { fit: Boolean(text) })
+        },
+        onOpenStation: id => {
+            track(GOALS.search, { rodzaj: 'stacja' })
+            openStation(id, { move: 'fly' })
+        },
         onOperator: name => {
+            track(GOALS.search, { rodzaj: 'operator' })
             state.view = 'list'
             closeAllOverlays()
             updateFilters(filters => { filters.operator = name; filters.q = '' }, { fit: true })
         },
         onFrequency: frequency => {
+            track(GOALS.search, { rodzaj: 'częstotliwość' })
             state.view = 'list'
             closeAllOverlays()
             updateFilters(filters => {

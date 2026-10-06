@@ -4,6 +4,10 @@ import { sdrEntries, toSdrSharp, chirpChannels, toChirp, CHIRP_LIMIT, toCsv } fr
 import { dataset } from './data.js'
 import { $, downloadFile, toast } from './ui.js'
 import { icon } from './views/common.js'
+import { GOALS, track } from './analytics.js'
+
+// Nazwy zakresów we właściwości "zakres" zdarzenia Plausible.
+const SCOPE_NAMES = { station: 'stacja', view: 'widok mapy', range: 'zasięg punktu', favorites: 'ulubione', filtered: 'filtry' }
 
 const FORMATS = [
     {
@@ -109,6 +113,7 @@ function download() {
     const stations = currentScope().stations
     if (!format.count(stations)) return
     downloadFile(fileName(format), format.build(stations), format.type)
+    track(GOALS.export, { format: format.name, zakres: SCOPE_NAMES[currentScope().key] || currentScope().key })
     dialog().close()
     toast(`Pobrano plik ${fileName(format)}.`)
 }

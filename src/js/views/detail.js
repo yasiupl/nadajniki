@@ -6,6 +6,7 @@ import {
 } from '../format.js'
 import { dataset } from '../data.js'
 import { typeColor, historyBadges, icon } from './common.js'
+import { isFavorite } from '../favorites.js'
 
 const POLARIZATIONS = { V: 'pionowa', H: 'pozioma', M: 'mieszana' }
 const OMNIDIRECTIONAL = '000ND00'
@@ -226,6 +227,9 @@ export function renderDetailView({ station, records, loading, error, history, po
                 <button type="button" class="icon-button" data-action="close-overlay" aria-label="Wróć do listy" title="Wróć do listy">${icon('arrow_back')}</button>
                 <span class="spacer"></span>
                 <button type="button" class="icon-button" data-action="zoom-station" aria-label="Pokaż na mapie" title="Pokaż na mapie">${icon('center_focus_strong')}</button>
+                <button type="button" class="icon-button favorite-button" data-action="toggle-favorite" aria-pressed="${isFavorite(station.id)}"
+                    aria-label="${isFavorite(station.id) ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}" title="${isFavorite(station.id) ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}">${icon(isFavorite(station.id) ? 'star' : 'star_border')}</button>
+                <button type="button" class="icon-button" data-action="export-open" data-scope="station" aria-label="Eksport częstotliwości stacji" title="Eksport częstotliwości stacji (CHIRP, SDR#, CSV)">${icon('file_download')}</button>
                 <button type="button" class="icon-button" data-action="share-station" aria-label="Udostępnij link" title="Udostępnij link">${icon('share')}</button>
             </div>
             <div class="card-tags">

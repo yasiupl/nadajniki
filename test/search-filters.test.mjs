@@ -113,3 +113,15 @@ test('station paths', () => {
     assert.equal(stationIdFromPath('/stacja/xyz'), null)
     assert.equal(stationIdFromPath('/'), null)
 })
+
+test('favorites filter keeps only the chosen stations and survives the URL', () => {
+    const stations = [station({ uid: 0, id: 'a000000000' }), station({ uid: 1, id: 'b000000000' })]
+    const filters = emptyFilters()
+    filters.favorites = true
+    const context = createContext(filters, { favorites: new Set(['b000000000']) })
+    assert.deepEqual(applyFilters(stations, filters, context).stations.map(s => s.id), ['b000000000'])
+    assert.deepEqual(applyFilters(stations, filters, createContext(filters)).stations, [], 'no favorites: no stations')
+    const params = filtersToParams(filters)
+    assert.equal(params.get('ulubione'), '1')
+    assert.equal(filtersFromParams(params).favorites, true)
+})

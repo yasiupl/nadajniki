@@ -1,9 +1,9 @@
 import './style.scss'
 import { ARCHIVE_URL, SITE_TITLE } from './js/config.js'
-import { formatDate, formatFrequency, distanceMeters, stationsLabel } from './js/format.js'
-import { filtersFromParams, emptyFilters, createContext, applyFilters } from './js/filters.js'
+import { formatDate, formatFrequency, distanceMeters } from './js/format.js'
+import { filtersFromParams, emptyFilters, createContext, applyFilters, activeFilterCount } from './js/filters.js'
 import {
-    dataset, loadStations, loadHistory, loadPopular, loadDetails, resolveStation, stationPath,
+    dataset, loadStations, loadHistory, loadPopular, loadDetails, resolveStation, stationPath, stationById,
     stationsOnFrequency, ensureSearchIndex
 } from './js/data.js'
 import { state, on } from './js/store.js'
@@ -14,8 +14,9 @@ import {
 import { initSearch } from './js/search.js'
 import { initTooltips } from './js/charts.js'
 import { showStationUrl, clearStationUrl, syncFiltersUrl, currentStationId, onRouteChange } from './js/router.js'
-import { toSdrSharp, toCsv } from './js/export.js'
-import { $, toast, copyText, downloadFile, isMobile } from './js/ui.js'
+import { openExportDialog } from './js/export-dialog.js'
+import { favoriteIds, toggleFavorite, onFavoritesChange } from './js/favorites.js'
+import { $, toast, copyText, isMobile } from './js/ui.js'
 import { themePreference, effectiveTheme, saveThemePreference, onSystemThemeChange } from './js/theme.js'
 
 let search = null
@@ -36,7 +37,7 @@ async function runFilters({ fit = false } = {}) {
     }
     const base = filters.status === 'removed' ? history.removed : dataset.stations
     if (filters.q.trim()) ensureSearchIndex(base)
-    const context = createContext(filters, { changes: history?.changes })
+    const context = createContext(filters, { changes: history?.changes, favorites: favoriteIds() })
     const result = applyFilters(base, filters, context)
     state.filtered = result.stations
     state.facets = result.facets
@@ -178,16 +179,25 @@ async function shareStation(station) {
     copyText(url, 'Skopiowano link do stacji.')
 }
 
-function exportStations(kind, scope) {
-    const stations = scope === 'probe' ? (state.overlay?.results || []).map(result => result.station) : stationsInView()
-    if (!stations.length) {
-        toast('Brak stacji do eksportu.')
-        return
+// Okno eksportu. Pierwszy zakres zależy od miejsca, z którego użytkownik otworzył okno.
+function openExport(origin) {
+    const scopes = []
+    const overlay = state.overlay
+    if (origin === 'station' && overlay?.station) {
+        scopes.push({ key: 'station', label: 'Ta stacja', stations: [overlay.station] })
     }
-    const date = dataset.release || 'dane'
-    if (kind === 'sdr') downloadFile(`nadajniki-${date}-sdrsharp.xml`, toSdrSharp(stations), 'application/xml')
-    else downloadFile(`nadajniki-${date}.csv`, toCsv(stations, window.location.origin), 'text/csv;charset=utf-8')
-    toast(`Wyeksportowano: ${stationsLabel(stations.length)}.`)
+    if (origin === 'probe' && overlay?.results) {
+        scopes.push({ key: 'probe', label: 'Stacje w zasięgu wybranego punktu', stations: overlay.results.map(result => result.station) })
+    }
+    if (state.mapReady) scopes.push({ key: 'view', label: 'Stacje w widoku mapy', stations: stationsInView() })
+    const favorites = [...favoriteIds()].map(stationById).filter(Boolean)
+    if (favorites.length) scopes.push({ key: 'favorites', label: 'Ulubione stacje', stations: favorites })
+    scopes.push({
+        key: 'filtered',
+        label: activeFilterCount(state.filters) ? 'Wszystkie stacje, które spełniają filtry' : 'Wszystkie stacje w wykazie',
+        stations: state.filtered
+    })
+    openExportDialog(scopes)
 }
 
 // --- Warstwy mapy ---
@@ -302,8 +312,14 @@ const actions = {
         }, { fit: true })
     },
     'retry-history': () => { ui.historyError = false; showView('changes') },
-    'export-sdr': element => exportStations('sdr', element.dataset.scope),
-    'export-csv': element => exportStations('csv', element.dataset.scope),
+    'export-open': element => openExport(element.dataset.scope),
+    'toggle-favorite': () => {
+        const station = state.overlay?.station
+        if (!station) return
+        const added = toggleFavorite(station.id)
+        toast(added ? 'Dodano stację do ulubionych.' : 'Usunięto stację z ulubionych.')
+    },
+    'set-favorites': element => updateFilters(filters => { filters.favorites = element.dataset.value === '1' }),
     'open-filters': () => openDrawer('filters'),
     'open-menu': () => openDrawer('menu'),
     'close-drawer': closeDrawers,
@@ -375,6 +391,8 @@ function bindEvents() {
     })
     document.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
+            // Otwarte okno dialogowe zamyka się samo. Karta stacji pod nim zostaje.
+            if (document.querySelector('dialog[open]')) return
             if (document.querySelector('.drawer.open')) closeDrawers()
             else if (mapView.isPickingProbe()) actions['probe-pick']()
             else if (state.overlay && !event.target.closest('input, select, textarea')) closeOverlay()
@@ -485,6 +503,14 @@ async function start() {
     bindEvents()
     syncThemeControls()
     onSystemThemeChange(applyTheme)
+    // Zmiana listy ulubionych zmienia wynik filtra "Tylko ulubione" i znaczniki na liście.
+    onFavoritesChange(() => {
+        if (state.filters.favorites) runFilters()
+        else {
+            renderDrawer()
+            scheduleRender()
+        }
+    })
     initTooltips(document.body)
     mapView.initMap($('#map'))
     search = initSearch({

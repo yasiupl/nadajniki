@@ -44,7 +44,9 @@ Punkt wejścia to plik `src/app.js`. Ten plik łączy moduły: uruchamia mapę, 
 | `src/js/search.js` | Pole wyszukiwania z podpowiedziami. |
 | `src/js/charts.js` | Wykresy w HTML i podpowiedź wykresów. |
 | `src/js/router.js` | Adres URL: karta stacji, filtry, odsłony dla Plausible. |
-| `src/js/export.js` | Eksport do SDR# (XML) i do CSV. |
+| `src/js/export.js` | Pliki eksportu: CHIRP (CSV), SDR# (XML) i tabela CSV. |
+| `src/js/export-dialog.js` | Okno eksportu: wybór stacji i formatu. |
+| `src/js/favorites.js` | Ulubione stacje zapisane w `localStorage`. |
 | `src/js/theme.js` | Motyw: automatyczny, jasny albo ciemny. |
 | `src/js/ui.js` | Komunikaty, schowek, pobieranie plików. |
 
@@ -102,6 +104,9 @@ Parametry filtrów:
 | `stan` | Stan w wykazie | `nowe`, `zmienione`, `usuniete` |
 | `wydanie` | Wydanie dla filtra stanu | data `RRRR-MM-DD` |
 | `wygasa` | Pozwolenie wygasa w ciągu N miesięcy | `6`, `12`, `24` |
+| `ulubione` | Tylko ulubione stacje | `1` |
+
+Lista ulubionych jest zapisana w przeglądarce. Link z parametrem `ulubione=1` pokazuje ulubione stacje osoby, która otwiera link.
 
 Serwer musi kierować adresy `/stacja/*` do pliku `index.html`. Pliki `vercel.json` i `netlify.toml` mają tę regułę. Serwer deweloperski ma opcję `historyApiFallback`.
 
@@ -146,6 +151,26 @@ Obszar obsługi to koło o promieniu z pozwolenia. Mapa rysuje koła jako wielok
 
 Panel zasłania część mapy. Aplikacja ustawia margines mapy (`setPadding`), więc środek mapy i dopasowanie widoku uwzględniają panel.
 
+## Eksport
+
+Przycisk „Eksport” jest na liście stacji, w wyniku narzędzia „Zasięg w punkcie” i w karcie stacji. Okno eksportu pozwala wybrać stacje i format pliku.
+
+Zakresy stacji:
+
+- ta stacja (tylko z karty stacji),
+- stacje w zasięgu wybranego punktu (tylko z narzędzia „Zasięg w punkcie”),
+- stacje w widoku mapy,
+- ulubione stacje (jeśli lista nie jest pusta),
+- wszystkie stacje, które spełniają filtry.
+
+Formaty:
+
+| Format | Zawartość |
+| --- | --- |
+| CHIRP (CSV) | Jeden kanał na częstotliwość nadawczą, najwyżej 1000 kanałów (`CHIRP_LIMIT`). Każdy kanał ma `Duplex` = `off`, więc radiotelefon nie nadaje na tym kanale. Nazwa kanału to skrót nazwy operatora, np. „PKP PLK”. Tryb `FM` dla kanałów 20 kHz i szerszych, `NFM` dla węższych. Plik nie ma znacznika BOM i nie ma polskich znaków. |
+| SDR# (XML) | Jedna pozycja na częstotliwość nadawczą i operatora. |
+| Tabela CSV | Jeden wiersz na stację, wszystkie dane stacji. Separator to średnik. Plik ma znacznik BOM, żeby Excel rozpoznał kodowanie UTF-8. |
+
 ## Kolory i motyw
 
 Kolory rodzajów sieci są w pliku `src/js/config.js`. Paleta ma osobne wartości dla motywu jasnego i ciemnego. Najliczniejsze rodzaje sieci (A, C, F) mają kolory, które są najlepiej rozróżnialne.
@@ -183,6 +208,7 @@ Service worker działa tylko w wersji produkcyjnej.
 Polecenie `npm test` uruchamia testy jednostkowe (wbudowany moduł testów Node.js):
 
 - `test/data-pipeline.test.mjs`: czytnik XLSX, parsery wartości, grupowanie stacji, sygnatury, historia zmian, przeniesienia, współrzędne.
-- `test/search-filters.test.mjs`: parser zapytania, dopasowanie stacji, filtry i fasety, zapis filtrów w adresie URL, formatowanie, ścieżki stacji.
+- `test/search-filters.test.mjs`: parser zapytania, dopasowanie stacji, filtry i fasety, filtr ulubionych, zapis filtrów w adresie URL, formatowanie, ścieżki stacji.
+- `test/export.test.mjs`: nazwy kanałów CHIRP, plik CHIRP (kanały tylko do odbioru, krok strojenia, tryb, limit kanałów), pliki SDR# i CSV.
 
 Testy nie sprawdzają interfejsu w przeglądarce. Po zmianie interfejsu uruchom `npm run serve` i sprawdź stronę w przeglądarce.

@@ -11,6 +11,7 @@ import { renderBandsView, renderAnalysisView } from './views/analysis.js'
 import { renderChangesView } from './views/changes.js'
 import { renderFiltersDrawer, renderActiveFilters, filtersBadge } from './filters-drawer.js'
 import { $, isMobile } from './ui.js'
+import { favoriteIds } from './favorites.js'
 
 const PAGE = 100
 const PANEL_WIDTH = 400
@@ -100,7 +101,7 @@ function changesInput() {
     const latest = history.releases[history.releases.length - 1]?.date
     if (ui.changesRelease === null) ui.changesRelease = latest
     const release = ui.changesRelease
-    const context = createContext(state.filters, { changes: history.changes })
+    const context = createContext(state.filters, { changes: history.changes, favorites: favoriteIds() })
     const keep = station => matches(station, state.filters, context, 'status')
     const current = dataset.stations.filter(keep)
     const lists = {

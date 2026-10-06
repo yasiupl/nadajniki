@@ -192,6 +192,14 @@ Format: `{ "<id>": [[wartości w kolejności detailFields], ...] }`. Wartości t
 | `aliases` | Przekierowania: `{ "<stary id>": "<nowy id>" }`. |
 | `events` | Zdarzenia: `{ "<id>": [zdarzenie, ...] }`. |
 
+### manifest.json
+
+Plik opisuje dane dla skryptu `scripts/data.mjs`.
+
+Format: `{ "version": 2, "release": data wydania, "generated": czas, "pipeline": skrót potoku danych, "files": [ścieżki plików] }`.
+
+Lista `files` zawiera `stations.json`, `history.json` i wszystkie pliki `details/XX.json`. Plik `popular.json` nie jest na liście, bo jest opcjonalny.
+
 ### popular.json
 
 Plik powstaje tylko z kluczem `PLAUSIBLE_API_KEY`.

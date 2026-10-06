@@ -8,11 +8,12 @@
     "node": "22.x"
   },
   "scripts": {
+    "data": "node scripts/data.mjs",
     "fetch-data": "node scripts/fetch-data.mjs",
     "build-data": "node --max-old-space-size=4096 scripts/build-data.mjs",
     "fetch-stats": "node scripts/fetch-stats.mjs",
     "build-app": "webpack --mode production",
-    "build": "npm run fetch-data && npm run build-data && npm run fetch-stats && npm run build-app",
+    "build": "npm run data && npm run build-app",
     "serve": "webpack serve --mode development",
     "test": "node --test test/*.test.mjs"
   },

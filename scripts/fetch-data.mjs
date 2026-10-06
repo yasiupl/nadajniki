@@ -5,9 +5,8 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { unzipSync } from 'fflate'
+import { BIP_URL, fetchBipLinks, releaseDate } from './lib/sources.mjs'
 
-const BIP_URL = 'https://bip.uke.gov.pl'
-const BIP_LIST_URL = `${BIP_URL}/pozwolenia-radiowe/wykaz-pozwolen-radiowych-tresci/klasyczne-sieci-rrl,9.html`
 const ARCHIVE_API_URL = 'https://api.dane.gov.pl/1.4/datasets/1070/resources'
 const DATA_DIR = 'data'
 const CURRENT_DIR = path.join(DATA_DIR, 'current')
@@ -16,8 +15,6 @@ const ARCHIVE_DIR = path.join(DATA_DIR, 'archive')
 // Liczba poprzednich wydań do historii zmian. 0 wyłącza historię.
 const HISTORY_MONTHS = Math.max(0, parseInt(process.env.HISTORY_MONTHS ?? '12', 10) || 0)
 
-const releaseDate = name => /(\d{4}-\d{2}-\d{2})/.exec(name)?.[1]
-
 async function download(url) {
     const response = await fetch(url)
     if (!response.ok) throw new Error(`HTTP ${response.status}: ${url}`)
@@ -25,12 +22,7 @@ async function download(url) {
 }
 
 async function fetchCurrent() {
-    const response = await fetch(BIP_LIST_URL)
-    if (!response.ok) throw new Error(`Nie można pobrać listy plików: HTTP ${response.status}`)
-    const html = await response.text()
-
-    const links = [...new Set([...html.matchAll(/href="([^"]*\/download\/[^"]*\.xlsx)"/gi)].map(m => m[1]))]
-    if (links.length === 0) throw new Error('Nie znaleziono plików .xlsx na stronie UKE')
+    const links = await fetchBipLinks()
 
     await fs.rm(CURRENT_DIR, { recursive: true, force: true })
     await fs.mkdir(CURRENT_DIR, { recursive: true })

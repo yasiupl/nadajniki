@@ -9,18 +9,42 @@ Strona jest statyczna. Serwer nie obsługuje zapytań użytkownika. Przeglądark
 Potok budowania:
 
 ```text
-BIP UKE (bieżący wykaz) ──┐
-                          ├─ fetch-data ─► data/ ─► build-data ─► dist/data/ ─┐
-dane.gov.pl (archiwum) ───┘                                                    ├─ build-app ─► dist/
-Plausible (opcjonalnie) ─────────────── fetch-stats ─► dist/data/popular.json ─┘
+                    ┌─ kopia: działająca strona /data/ ──────────────────────────────┐
+scripts/data.mjs ───┤                                                                ├─► dist/data/ ─► build-app ─► dist/
+                    └─ pełne budowanie: fetch-data ─► build-data ─► fetch-stats ─────┘
 ```
 
-Polecenie `npm run build` uruchamia kolejno cztery skrypty:
+Polecenie `npm run build` uruchamia dwa kroki:
+
+1. `data` (skrypt `scripts/data.mjs`) przygotowuje katalog `dist/data/`. Skrypt kopiuje dane z działającej strony albo uruchamia pełne budowanie danych.
+2. `build-app` buduje aplikację (webpack) do katalogu `dist/`. Webpack czyści katalog `dist/`, ale zostawia katalog `dist/data/`.
+
+Pełne budowanie danych uruchamia kolejno trzy skrypty:
 
 1. `fetch-data` pobiera bieżący wykaz i poprzednie wydania do katalogu `data/`.
-2. `build-data` przetwarza wydania i zapisuje pliki danych do katalogu `dist/data/`.
+2. `build-data` przetwarza wydania i zapisuje pliki danych i plik `manifest.json` do katalogu `dist/data/`.
 3. `fetch-stats` pobiera liczbę wyświetleń kart stacji. Skrypt działa tylko z kluczem API (interfejsu programistycznego) Plausible.
-4. `build-app` buduje aplikację (webpack) do katalogu `dist/`. Webpack czyści katalog `dist/`, ale zostawia katalog `dist/data/`.
+
+### Kopia danych
+
+Pełne budowanie danych trwa kilka minut. Zmiana interfejsu nie zmienia danych, więc skrypt `data.mjs` może skopiować dane z działającej strony. Skrypt czyta plik `/data/manifest.json` strony i podejmuje decyzję:
+
+| Warunek | Decyzja |
+| --- | --- |
+| `DATA_BUILD=full` | Pełne budowanie. |
+| Strona nie ma pliku `manifest.json` | Pełne budowanie. |
+| Skrót potoku danych jest inny niż w `manifest.json` | Pełne budowanie. |
+| `DATA_BUILD=reuse` | Kopia. |
+| BIP UKE ma nowsze wydanie niż strona | Pełne budowanie. |
+| BIP UKE ma to samo wydanie co strona | Kopia. |
+| BIP UKE nie działa, podgląd gałęzi, dane młodsze niż 31 dni | Kopia. |
+| BIP UKE nie działa, inne przypadki | Pełne budowanie. |
+
+Skrót potoku danych (`scripts/lib/pipeline.mjs`) obejmuje pliki `scripts/fetch-data.mjs`, `scripts/build-data.mjs` i `scripts/lib/*.mjs`. Zmiana tych plików wymusza pełne budowanie, bo format danych może być inny. Skrót nie zależy od końców linii.
+
+Podgląd gałęzi rozpoznaje zmienna `VERCEL_ENV=preview` (Vercel) albo `CONTEXT=deploy-preview` lub `CONTEXT=branch-deploy` (Netlify).
+
+Jeśli kopia się nie powiedzie, skrypt uruchamia pełne budowanie. Opcja `--dry-run` tylko wypisuje decyzję.
 
 Jedyny kod serwera to funkcja cykliczna `scheduled-deploy`. Funkcja raz w miesiącu wywołuje deploy hook. Dzień przebudowy opisuje [README](../README.md).
 

@@ -12,6 +12,7 @@ import {
     compactStation, detailRecords
 } from './lib/stations.mjs'
 import { History } from './lib/history.mjs'
+import { pipelineHash } from './lib/pipeline.mjs'
 
 const OUTPUT_DIR = path.join('dist', 'data')
 const DETAILS_DIR = path.join(OUTPUT_DIR, 'details')
@@ -38,6 +39,7 @@ function writeJson(file, data) {
     return fs.statSync(file).size
 }
 
+const generated = Date.now()
 const { current, archive } = JSON.parse(fs.readFileSync(path.join('data', 'releases.json'), 'utf8'))
 const releases = [...archive, current]
 
@@ -86,7 +88,7 @@ const stationsSize = writeJson(path.join(OUTPUT_DIR, 'stations.json'), {
     version: 2,
     release: current.date,
     source: current.source,
-    generated: Date.now(),
+    generated,
     releases: releases.map(release => release.date),
     fields: [...STATION_FIELDS, 'since', 'changed'],
     detailFields: DETAIL_FIELDS,
@@ -126,6 +128,15 @@ const historySize = writeJson(path.join(OUTPUT_DIR, 'history.json'), {
     removed: removedRecords,
     aliases: Object.fromEntries(aliases),
     events: Object.fromEntries(events)
+})
+
+// Opis danych dla scripts/data.mjs: kolejne budowanie może skopiować te pliki zamiast budować je od nowa.
+writeJson(path.join(OUTPUT_DIR, 'manifest.json'), {
+    version: 2,
+    release: current.date,
+    generated,
+    pipeline: pipelineHash(),
+    files: ['stations.json', 'history.json', ...[...shards.keys()].sort().map(shard => `details/${shard}.json`)]
 })
 
 const kB = size => `${Math.round(size / 1024)} kB`

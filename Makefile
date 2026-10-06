@@ -5,6 +5,9 @@ deploy:
 serve:
 	npm run serve
 
+data:
+	npm run data
+
 download-data:
 	npm run fetch-data
 

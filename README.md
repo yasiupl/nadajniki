@@ -79,7 +79,14 @@ Z kluczem API Plausible polecenie `npm run fetch-stats` zapisuje plik `popular.j
 
 ## Wdrożenie
 
-Projekt działa na Vercel i na Netlify. Polecenie `npm run build` pobiera dane UKE, przetwarza je, pobiera statystyki i buduje stronę do katalogu `dist/`. Mapa używa danych z `dist/data/`, więc budowanie nie wysyła już tilesetu do Mapbox.
+Projekt działa na Vercel i na Netlify. Polecenie `npm run build` przygotowuje dane w katalogu `dist/data/` i buduje stronę do katalogu `dist/`. Mapa używa danych z `dist/data/`, więc budowanie nie wysyła tilesetu do Mapbox.
+
+Dane strony powstają na jeden z dwóch sposobów (skrypt `scripts/data.mjs`):
+
+- **Kopia z działającej strony.** Skrypt pobiera gotowe pliki z `https://nadajniki.yasiu.pl/data/`. Kopia trwa kilka sekund. Skrypt robi kopię, jeśli BIP UKE nie ma nowszego wydania niż strona i jeśli kod potoku danych jest taki sam jak na stronie.
+- **Pełne budowanie.** Skrypt pobiera dane UKE, przetwarza je i pobiera statystyki. Pełne budowanie trwa kilka minut. Skrypt buduje dane od nowa po nowym wydaniu w BIP UKE i po zmianie skryptów danych.
+
+Jeśli BIP UKE nie działa, podgląd gałęzi kopiuje dane młodsze niż 31 dni. Produkcja buduje dane od nowa. Polecenie `node scripts/data.mjs --dry-run` pokazuje decyzję bez budowania.
 
 Konfiguracja platform:
 
@@ -92,6 +99,8 @@ Zmienne środowiskowe:
 
 | Zmienna | Opis |
 | --- | --- |
+| `DATA_BUILD` | Sposób przygotowania danych: `auto` (domyślnie), `full` (zawsze pełne budowanie), `reuse` (kopia bez sprawdzania wydania w BIP UKE). |
+| `DATA_REUSE_URL` | Strona, z której skrypt kopiuje dane. Wartość domyślna: `https://nadajniki.yasiu.pl`. |
 | `HISTORY_MONTHS` | Liczba poprzednich wydań do historii zmian. Wartość domyślna: `12`. Wartość `0` wyłącza historię. |
 | `PLAUSIBLE_API_KEY` | Klucz API Plausible (Stats API). Bez klucza strona nie pokazuje liczby wyświetleń. |
 | `PLAUSIBLE_URL` | Adres instancji Plausible. Wartość domyślna: `https://plausible.yasiu.pl`. |
@@ -109,10 +118,9 @@ Workflow GitHub Actions `.github/workflows/main.yml` pozwala ręcznie wywołać 
 ## Praca lokalna
 
 1. Zainstaluj zależności: `npm install`.
-2. Pobierz dane: `npm run fetch-data`.
-3. Przetwórz dane: `npm run build-data`.
-4. Uruchom serwer deweloperski: `npm run serve`. Strona działa pod adresem http://localhost:9000.
-5. Uruchom testy: `npm test`.
+2. Przygotuj dane: `npm run data`. Skrypt kopiuje dane z działającej strony albo buduje je od nowa. Pełne budowanie wymusza `DATA_BUILD=full npm run data`.
+3. Uruchom serwer deweloperski: `npm run serve`. Strona działa pod adresem http://localhost:9000.
+4. Uruchom testy: `npm test`.
 
 ## Dokumentacja
 

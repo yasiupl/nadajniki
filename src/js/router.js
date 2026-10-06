@@ -43,7 +43,8 @@ export function clearStationUrl() {
 }
 
 export function syncFiltersUrl(filters) {
-    const params = filtersToParams(filters).toString()
+    // Przecinek jest dozwolony w adresie; bez kodowania link jest czytelny (typ=A,C, punkt=50.06,19.94).
+    const params = filtersToParams(filters).toString().replace(/%2C/gi, ',')
     const search = params ? `?${params}` : ''
     if (search === window.location.search) return
     window.history.replaceState(window.history.state, '', urlWith(window.location.pathname, search))

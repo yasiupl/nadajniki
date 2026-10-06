@@ -29,7 +29,6 @@ let coverageData = EMPTY
 let selectionData = EMPTY
 let hoverUid = null
 let selectedUid = null
-let probeUids = []
 let probeMarker = null
 let pickingProbe = false
 let popup = null
@@ -104,7 +103,6 @@ function addLayers() {
     const strokeWidth = base => ['case',
         isState('selected'), 3,
         isState('hover'), 2.5,
-        isState('probe'), 2,
         removed, 1.5,
         base]
     map.addLayer({
@@ -120,7 +118,7 @@ function addLayers() {
                 14, ['case', isState('selected'), 11, 8]],
             'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 4, strokeWidth(0.4), 10, strokeWidth(1)],
             'circle-stroke-color': ['case',
-                ['any', isState('selected'), isState('hover'), isState('probe')], theme.ink,
+                ['any', isState('selected'), isState('hover')], theme.ink,
                 removed, theme.muted,
                 theme.surface],
             'circle-opacity': 0.92
@@ -168,7 +166,6 @@ function setFeatureState(uid, key, value) {
 function applyFeatureStates() {
     setFeatureState(selectedUid, 'selected', true)
     setFeatureState(hoverUid, 'hover', true)
-    for (const uid of probeUids) setFeatureState(uid, 'probe', true)
 }
 
 // Skrócona nazwa operatora do etykiety na mapie.
@@ -379,12 +376,6 @@ export function setSelection(station) {
     if (ready) map.getSource('selection').setData(selectionData)
 }
 
-export function setProbeStations(stations) {
-    for (const uid of probeUids) setFeatureState(uid, 'probe', false)
-    probeUids = stations.map(station => station.uid)
-    for (const uid of probeUids) setFeatureState(uid, 'probe', true)
-}
-
 export function showProbe(lngLat) {
     if (!map) return
     if (!probeMarker) {
@@ -397,7 +388,6 @@ export function showProbe(lngLat) {
 
 export function clearProbe() {
     probeMarker?.remove()
-    setProbeStations([])
 }
 
 export function startProbePick() {

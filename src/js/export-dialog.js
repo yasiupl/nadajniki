@@ -43,7 +43,8 @@ const selection = { scopes: [], scope: '', format: FORMATS[0].key }
 let initialized = false
 
 const dialog = () => $('#export-dialog')
-const currentScope = () => selection.scopes.find(scope => scope.key === selection.scope) || selection.scopes[0]
+const currentScope = () => selection.scopes.find(scope => scope.key === selection.scope && !scope.disabled) ||
+    selection.scopes.find(scope => !scope.disabled)
 const currentFormat = () => FORMATS.find(format => format.key === selection.format) || FORMATS[0]
 const fileName = format => `nadajniki-${dataset.release || 'dane'}-${format.file}`
 
@@ -82,9 +83,9 @@ function render() {
         </div>
         <fieldset>
             <legend>Stacje</legend>
-            ${selection.scopes.map(item => html`<label class="option">
-                <input type="radio" name="scope" value="${item.key}"${item.key === scope.key ? ' checked' : ''}>
-                <span class="option-text"><strong>${item.label}</strong><span class="muted small">${stationsLabel(item.stations.length)}</span></span>
+            ${selection.scopes.map(item => html`<label class="option${item.disabled ? ' disabled' : ''}">
+                <input type="radio" name="scope" value="${item.key}"${item.key === scope.key ? ' checked' : ''}${item.disabled ? ' disabled' : ''}>
+                <span class="option-text"><strong>${item.label}</strong><span class="muted small">${item.disabled || stationsLabel(item.stations.length)}</span></span>
             </label>`)}
         </fieldset>
         <fieldset>
@@ -126,11 +127,12 @@ function initialize() {
     initialized = true
 }
 
-// scopes: [{ key, label, stations }]. Pierwszy zakres jest wybrany na start.
-export function openExportDialog(scopes) {
+// scopes: [{ key, label, stations, disabled }]. disabled: powód, dla którego zakres jest nieaktywny, albo pusty tekst.
+// selected: zakres zaznaczony na start (jeśli jest aktywny).
+export function openExportDialog(scopes, selected = scopes[0].key) {
     if (!initialized) initialize()
     selection.scopes = scopes
-    selection.scope = scopes[0].key
+    selection.scope = selected
     render()
     dialog().showModal()
 }

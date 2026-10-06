@@ -855,6 +855,15 @@ body[data-panel="collapsed"] {
     background: var(--accent-soft);
   }
 
+  &.disabled {
+    cursor: default;
+    opacity: 0.6;
+
+    &:hover {
+      background: none;
+    }
+  }
+
   .option-text {
     display: flex;
     flex-direction: column;

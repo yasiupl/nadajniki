@@ -1,6 +1,6 @@
 // Panel filtrów i pasek aktywnych filtrów.
 import { NETWORK_TYPES, BANDS, BANDWIDTHS, OFFICES, STATUSES, typeInfo } from './config.js'
-import { html, formatNumber, formatDate, formatFrequency, stationsLabel } from './format.js'
+import { html, formatNumber, formatDate, formatFrequency, formatDms, stationsLabel } from './format.js'
 import { activeFilterCount } from './filters.js'
 import { dataset } from './data.js'
 import { state } from './store.js'
@@ -87,6 +87,7 @@ export function renderActiveFilters() {
     if (filters.q.trim()) add(`„${filters.q.trim()}”`, 'remove-query')
     if (filters.operator) add(`Operator: ${filters.operator}`, 'remove-operator')
     if (filters.favorites) add('Ulubione', 'set-favorites', '')
+    if (filters.point) add(`W zasięgu punktu ${formatDms(filters.point.lat, 'N', 'S')} ${formatDms(filters.point.lng, 'E', 'W')}`, 'remove-point')
     for (const code of filters.types) add(typeInfo(code).name, 'toggle-facet', code, 'types')
     for (const key of filters.bands) add(BANDS.find(band => band.key === key)?.name || key, 'toggle-facet', key, 'bands')
     if (filters.frequencyMin !== null || filters.frequencyMax !== null) {

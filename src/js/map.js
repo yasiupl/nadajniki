@@ -1,7 +1,7 @@
 // Mapa (Mapbox GL): warstwy stacji, obszarów obsługi, gęstości i zaznaczenia.
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
-import { MAPBOX_TOKEN, MAP_STYLES, MAP_CENTER, MAP_ZOOM, NETWORK_TYPES, OTHER_TYPE, typeInfo } from './config.js'
+import { MAPBOX_TOKEN, MAP_STYLES, MAP_CENTER, MAP_BOUNDS, NETWORK_TYPES, OTHER_TYPE, typeInfo } from './config.js'
 import { formatFrequency } from './format.js'
 import { state, emit } from './store.js'
 import { stationByUid } from './data.js'
@@ -213,8 +213,7 @@ export function initMap(container) {
             style: MAP_STYLES[state.theme],
             projection: 'mercator',
             hash: true,
-            center: MAP_CENTER,
-            zoom: MAP_ZOOM,
+            bounds: MAP_BOUNDS,
             minZoom: 3,
             attributionControl: true
         })
@@ -429,6 +428,17 @@ export function fitToStations(stations) {
     for (const station of located) bounds.extend([station.lon, station.lat])
     // Górny margines zostawia miejsce na narzędzia mapy i pasek aktywnych filtrów.
     map.fitBounds(bounds, { padding: { top: 120, right: 70, bottom: 50, left: 50 }, maxZoom: 13, duration: 800 })
+}
+
+// Cały kraj w części mapy, której nie zasłania panel. Margines z opcji fitBounds zastąpiłby margines panelu,
+// więc zoom liczy się z ich sumy, a środek ustawia jumpTo względem marginesu panelu.
+export function fitCountry() {
+    if (!map) return
+    const padding = map.getPadding()
+    const camera = map.cameraForBounds(MAP_BOUNDS, {
+        padding: { top: padding.top + 16, right: padding.right + 16, bottom: padding.bottom + 16, left: padding.left + 16 }
+    })
+    if (camera) map.jumpTo({ center: new mapboxgl.LngLatBounds(MAP_BOUNDS).getCenter(), zoom: camera.zoom })
 }
 
 export function flyToPoint(lngLat, zoom) {

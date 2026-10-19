@@ -575,6 +575,8 @@ async function start() {
     })
     initTooltips(document.body)
     mapView.initMap($('#map'))
+    // Bez pozycji w adresie mapa pokazuje całą Polskę, gdy panel ma już swoją wysokość (na telefonie zasłania dół mapy).
+    if (!hasMapPosition && !currentStationId() && !state.filters.point) on('map:ready', () => mapView.fitCountry())
     search = initSearch({
         onApply: text => {
             if (text) track(GOALS.search, { rodzaj: 'tekst' })

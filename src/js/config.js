@@ -6,7 +6,8 @@ export const MAP_STYLES = {
     dark: 'mapbox://styles/mapbox/dark-v11'
 }
 export const MAP_CENTER = [19.134422, 51.919231]
-export const MAP_ZOOM = 5.6
+// Granice Polski: widok startowy dopasowuje się do nich na każdym ekranie.
+export const MAP_BOUNDS = [[14.12, 49.0], [24.15, 54.84]]
 export const SITE_TITLE = 'Mapa nadajników radiowych'
 
 // Rodzaje sieci (legenda UKE). Kolejność to kolejność kolorów palety kategorycznej:

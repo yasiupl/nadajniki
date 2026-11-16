@@ -16,23 +16,12 @@
   <meta property="og:image" content="/icons/icon_512x512.png">
   <meta property="og:url" content="https://nadajniki.yasiu.pl">
   <meta name="twitter:card" content="summary_large_image">
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-N79X7MS');</script>
-  <!-- End Google Tag Manager -->
-  <script defer data-domain="nadajniki.yasiu.pl" src="https://plausible.yasiu.pl/js/script.js"></script>
+  <!-- Plausible przez ścieżkę tej strony (przekierowanie w netlify.toml i vercel.json). Blokady reklam rzadziej blokują taki adres. -->
+  <script defer data-domain="nadajniki.yasiu.pl" data-api="/m/api/event" src="/m/js/script.js"></script>
   <script>window.plausible = window.plausible || function () { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
 </head>
 
 <body>
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N79X7MS"
-  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
-
   <header class="topbar">
     <button type="button" class="icon-button" data-action="open-menu" aria-label="Menu"><i class="material-icons" aria-hidden="true">menu</i></button>
     <a class="brand" href="/">Mapa nadajników</a>
@@ -43,6 +32,8 @@
       <button id="search-clear" type="button" class="icon-button" aria-label="Wyczyść wyszukiwanie" hidden><i class="material-icons" aria-hidden="true">close</i></button>
       <div id="search-results" class="search-results" role="listbox" aria-label="Podpowiedzi" hidden></div>
     </div>
+    <button id="support-button" type="button" class="button support-button" data-action="open-support" aria-label="Wesprzyj stronę" title="Wesprzyj stronę">
+      <i class="material-icons" aria-hidden="true">local_cafe</i><span class="label">Wesprzyj</span></button>
     <button id="theme-toggle" type="button" class="icon-button theme-toggle" data-action="toggle-theme" aria-label="Włącz tryb ciemny" title="Włącz tryb ciemny">
       <i class="material-icons" aria-hidden="true">dark_mode</i></button>
     <button type="button" class="button filters-button" data-action="open-filters" aria-label="Filtry">
@@ -80,6 +71,8 @@
       <div id="panel-body" class="panel-body" role="tabpanel">
         <p class="muted loading">Wczytywanie danych…</p>
       </div>
+      <!-- Miejsce na reklamę lub wsparcie (src/js/partner.js). -->
+      <section id="panel-note" class="panel-note" aria-label="Informacja od autora" hidden></section>
     </aside>
     <button type="button" class="panel-expand" data-action="toggle-panel" aria-label="Rozwiń panel">
       <i class="material-icons" aria-hidden="true">chevron_right</i><span>Stacje</span></button>
@@ -102,7 +95,7 @@
       <h2>Mapa nadajników radiowych</h2>
       <button type="button" class="icon-button" data-action="close-drawer" aria-label="Zamknij menu"><i class="material-icons" aria-hidden="true">close</i></button>
     </div>
-    <div class="drawer-body">
+    <div class="drawer-body menu-body">
       <p>Mapa pokazuje stacje z wykazu pozwoleń radiowych UKE dla klasycznych sieci radiokomunikacji ruchomej lądowej (RRL).</p>
       <p id="data-info" class="muted small"></p>
       <section class="menu-section" aria-labelledby="theme-title">
@@ -120,19 +113,15 @@
         <a href="https://bip.uke.gov.pl/download/gfx/bip/pl/defaultaktualnosci/140/9/96/_legenda_do_wykazu_rrl.pdf" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">menu_book</i>Legenda wykazu (PDF)</a>
         <a href="https://github.com/yasiupl/nadajniki" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">code</i>Kod źródłowy</a>
       </nav>
-      <hr>
-      <div class="author">
-        <a href="https://yasiu.pl" target="_blank" rel="noopener"><img class="avatar" alt="" src="https://yasiu.pl/assets/meirl.png" width="40" height="40" loading="lazy"></a>
-        <div>
-          <a href="https://yasiu.pl" target="_blank" rel="noopener"><strong>Marcin Jasiukowicz</strong></a><br>
-          <a href="mailto:nadajniki@yasiu.pl?subject=Nadajniki">nadajniki@yasiu.pl</a>
-        </div>
+      <!-- Wsparcie z profilem autora i kontakt są przyklejone do dołu menu. -->
+      <div class="menu-bottom">
+        <hr>
+        <!-- Wsparcie (src/js/partner.js). -->
+        <section id="menu-note" class="panel-note menu-note" aria-label="Wsparcie strony" hidden></section>
+        <nav class="menu-links" aria-label="Kontakt">
+          <a href="mailto:nadajniki@yasiu.pl?subject=Nadajniki"><i class="material-icons" aria-hidden="true">mail</i>nadajniki@yasiu.pl</a>
+        </nav>
       </div>
-      <nav class="menu-links" aria-label="Autor i wsparcie">
-        <a href="https://yasiu.pl" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">account_circle</i>Portfolio</a>
-        <a href="https://patreon.com/yasiupl" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">monetization_on</i>Wsparcie</a>
-        <a href="https://paypal.me/yasiupl" target="_blank" rel="noopener"><i class="material-icons" aria-hidden="true">money</i>Donacje</a>
-      </nav>
     </div>
   </aside>
   <div id="scrim" class="scrim" hidden></div>
@@ -144,6 +133,13 @@
       <p><strong>Nie nadawaj na żadnej z tych częstotliwości bez wymaganego pozwolenia radiowego.</strong></p>
       <p>Dane pochodzą z publicznych zasobów Urzędu Komunikacji Elektronicznej (UKE).</p>
       <div class="dialog-actions"><button class="button button-primary" value="ok">Rozumiem</button></div>
+    </form>
+  </dialog>
+  <!-- Okno wsparcia (src/js/partner.js). -->
+  <dialog id="support-dialog" class="dialog support-dialog" aria-label="Wsparcie strony">
+    <form method="dialog">
+      <section id="dialog-note" class="panel-note menu-note"></section>
+      <div class="dialog-actions"><button class="button" value="close">Może później</button></div>
     </form>
   </dialog>
   <dialog id="export-dialog" class="dialog export-dialog" aria-labelledby="export-title"></dialog>

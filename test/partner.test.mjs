@@ -45,3 +45,13 @@ test('slot without hide button for the menu', () => {
     assert.match(slotHtml(slot), /data-note-hide/)
     assert.doesNotMatch(slotHtml(slot, { hideable: false }), /data-note-hide/)
 })
+
+test('profile appears only on request', () => {
+    const slot = SLOTS.find(item => item.id === 'wsparcie')
+    assert.doesNotMatch(slotHtml(slot), /note-profile/)
+    const html = slotHtml(slot, { hideable: false, profile: true })
+    assert.match(html, /Jestem autorem tej strony\./)
+    assert.match(html, /data-note-link="portfolio"/)
+    assert.match(html, /local_cafe/)
+    assert.match(html, /SP4EVA/)
+})

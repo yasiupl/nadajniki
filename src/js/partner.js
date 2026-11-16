@@ -8,6 +8,18 @@ import { GOALS, track } from './analytics.js'
 // Zmień "collected" po każdej wpłacie.
 export const SUPPORT_GOAL = { year: 2026, collected: 35, target: 500 }
 
+// Mini profil autora w menu bocznym i w oknie wsparcia.
+// Zdjęcie to łącze do pliku na yasiu.pl. Zmiana zdjęcia na yasiu.pl zmienia też zdjęcie tutaj.
+// callsign: znak radioamatorski.
+export const AUTHOR = {
+    name: 'Marcin Jasiukowicz',
+    callsign: 'SP4EVA',
+    slogan: 'Majsterkowicz zafascynowany kosmosem 🚀',
+    photo: 'https://yasiu.pl/assets/meirl.png',
+    about: 'Jestem autorem tej strony.',
+    portfolio: { text: 'Zobacz, czym jeszcze się zajmuję', href: 'https://yasiu.pl' }
+}
+
 // Treści miejsca. Strona wybiera jedną treść na sesję przeglądarki.
 // id: nazwa treści w zdarzeniach Plausible (właściwość "tresc").
 // links[].id: nazwa linku w zdarzeniach Plausible (właściwość "akcja").
@@ -28,7 +40,7 @@ export const SLOTS = [
         goal: SUPPORT_GOAL,
         text: 'Mapa jest bezpłatna i bez reklam sieciowych. Wpłaty pokrywają koszty serwera i map oraz rozwój nowych funkcji.',
         links: [
-            { id: 'kawa', text: 'Postaw kawę', href: 'https://buycoffee.to/yasiu' }
+            { id: 'kawa', text: 'Postaw kawę', icon: 'local_cafe', href: 'https://buycoffee.to/yasiu' }
         ]
     }
 ]
@@ -84,14 +96,27 @@ export function goalHtml(goal) {
         `<p class="panel-note-goal-text">Koszty ${goal.year}: pokryte ${percent} (${money(goal.collected)} zł z ${money(goal.target)} zł)</p>`
 }
 
+export function profileHtml(author = AUTHOR) {
+    return '<div class="note-profile">' +
+        `<img class="avatar" alt="" src="${escapeHtml(author.photo)}" width="48" height="48" loading="lazy">` +
+        `<div><p class="note-profile-name">${escapeHtml(author.name)}` +
+        (author.callsign ? ` <span class="note-profile-callsign">${escapeHtml(author.callsign)}</span>` : '') + '</p>' +
+        `<p class="note-profile-slogan">${escapeHtml(author.slogan)}</p>` +
+        `<p class="note-profile-about">${escapeHtml(author.about)} ` +
+        `<a href="${escapeHtml(author.portfolio.href)}" target="_blank" rel="noopener" data-note-link="portfolio">${escapeHtml(author.portfolio.text)}</a></p></div></div>`
+}
+
 // hideable: false usuwa przycisk "Ukryj" (np. w menu bocznym).
-export function slotHtml(slot, { hideable = true } = {}) {
+// profile: true dodaje mini profil autora.
+export function slotHtml(slot, { hideable = true, profile = false } = {}) {
     const links = slot.links.map(link => {
         const external = link.href.startsWith('http') ? ' target="_blank" rel="noopener"' : ''
-        return `<a class="panel-note-link" href="${escapeHtml(link.href)}" data-note-link="${escapeHtml(link.id)}"${external}>${escapeHtml(link.text)}</a>`
+        const icon = link.icon ? `<i class="material-icons" aria-hidden="true">${escapeHtml(link.icon)}</i>` : ''
+        return `<a class="panel-note-link" href="${escapeHtml(link.href)}" data-note-link="${escapeHtml(link.id)}"${external}>${icon}${escapeHtml(link.text)}</a>`
     }).join('')
     const hide = hideable ? '<button type="button" class="icon-button panel-note-hide" data-note-hide aria-label="Ukryj" title="Ukryj"><i class="material-icons" aria-hidden="true">close</i></button>' : ''
     return `<div class="panel-note-header"><span class="panel-note-label">${escapeHtml(slot.label)}</span>${hide}</div>` +
+        (profile ? profileHtml() : '') +
         `<p class="panel-note-title">${escapeHtml(slot.title)}</p>` +
         `<p class="panel-note-text">${escapeHtml(slot.text)}</p>` +
         goalHtml(slot.goal) +
@@ -157,7 +182,7 @@ export function initPartnerSlot() {
 function initStaticNote(element, polozenie) {
     const slot = SLOTS.find(item => item.id === 'wsparcie')
     if (!element || !slot) return
-    element.innerHTML = slotHtml(slot, { hideable: false })
+    element.innerHTML = slotHtml(slot, { hideable: false, profile: true })
     element.hidden = false
     element.addEventListener('click', event => {
         const link = event.target.closest('[data-note-link]')

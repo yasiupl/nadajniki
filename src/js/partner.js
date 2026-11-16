@@ -84,13 +84,14 @@ export function goalHtml(goal) {
         `<p class="panel-note-goal-text">Koszty ${goal.year}: pokryte ${percent} (${money(goal.collected)} zł z ${money(goal.target)} zł)</p>`
 }
 
-export function slotHtml(slot) {
+// hideable: false usuwa przycisk "Ukryj" (np. w menu bocznym).
+export function slotHtml(slot, { hideable = true } = {}) {
     const links = slot.links.map(link => {
         const external = link.href.startsWith('http') ? ' target="_blank" rel="noopener"' : ''
         return `<a class="panel-note-link" href="${escapeHtml(link.href)}" data-note-link="${escapeHtml(link.id)}"${external}>${escapeHtml(link.text)}</a>`
     }).join('')
-    return `<div class="panel-note-header"><span class="panel-note-label">${escapeHtml(slot.label)}</span>` +
-        '<button type="button" class="icon-button panel-note-hide" data-note-hide aria-label="Ukryj" title="Ukryj"><i class="material-icons" aria-hidden="true">close</i></button></div>' +
+    const hide = hideable ? '<button type="button" class="icon-button panel-note-hide" data-note-hide aria-label="Ukryj" title="Ukryj"><i class="material-icons" aria-hidden="true">close</i></button>' : ''
+    return `<div class="panel-note-header"><span class="panel-note-label">${escapeHtml(slot.label)}</span>${hide}</div>` +
         `<p class="panel-note-title">${escapeHtml(slot.title)}</p>` +
         `<p class="panel-note-text">${escapeHtml(slot.text)}</p>` +
         goalHtml(slot.goal) +
@@ -141,11 +142,25 @@ export function initPartnerSlot() {
             event.preventDefault()
             storageSet(globalThis.localStorage, HIDDEN_KEY, SLOT_VERSION)
             element.hidden = true
-            track(GOALS.slot, { tresc: slot.id, akcja: 'ukrycie' })
+            track(GOALS.slot, { tresc: slot.id, akcja: 'ukrycie', polozenie: 'panel' })
             return
         }
         const link = event.target.closest('[data-note-link]')
-        if (link) track(GOALS.slot, { tresc: slot.id, akcja: link.dataset.noteLink })
+        if (link) track(GOALS.slot, { tresc: slot.id, akcja: link.dataset.noteLink, polozenie: 'panel' })
     })
     measure(element, slot)
+    initMenuNote()
+}
+
+// Menu boczne: zawsze treść "wsparcie", bez przycisku "Ukryj".
+function initMenuNote() {
+    const element = document.getElementById('menu-note')
+    const slot = SLOTS.find(item => item.id === 'wsparcie')
+    if (!element || !slot) return
+    element.innerHTML = slotHtml(slot, { hideable: false })
+    element.hidden = false
+    element.addEventListener('click', event => {
+        const link = event.target.closest('[data-note-link]')
+        if (link) track(GOALS.slot, { tresc: slot.id, akcja: link.dataset.noteLink, polozenie: 'menu' })
+    })
 }

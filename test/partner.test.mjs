@@ -39,3 +39,9 @@ test('hiding is stored per content version', () => {
     assert.equal(isSlotHidden(memory({ 'panel-note-hidden': SLOT_VERSION })), true)
     assert.equal(isSlotHidden(memory({ 'panel-note-hidden': 'old' })), false)
 })
+
+test('slot without hide button for the menu', () => {
+    const slot = SLOTS.find(item => item.id === 'wsparcie')
+    assert.match(slotHtml(slot), /data-note-hide/)
+    assert.doesNotMatch(slotHtml(slot, { hideable: false }), /data-note-hide/)
+})

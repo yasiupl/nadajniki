@@ -177,14 +177,14 @@ Moduł `src/js/analytics.js` wysyła zdarzenia Plausible, gdy użytkownik używa
 | `Zakładka` | Kliknięcie zakładki panelu. | `zakladka`: `Stacje`, `Pasma`, `Analiza`, `Zmiany` |
 | `Warstwa mapy` | Włączenie warstwy mapy. | `warstwa`: `obszary obsługi`, `gęstość`, `etykiety` |
 | `Motyw` | Zmiana motywu. | `motyw`: `automatyczny`, `jasny`, `ciemny` |
-| `Miejsce w panelu` | Kliknięcie linku albo przycisku „Ukryj” w miejscu na reklamę. | `tresc`: identyfikator treści (np. `zaproszenie`, `wsparcie`); `akcja`: identyfikator linku (np. `kontakt`, `kawa`) albo `ukrycie` |
+| `Miejsce w panelu` | Kliknięcie linku albo przycisku „Ukryj” w miejscu na reklamę. | `tresc`: identyfikator treści (np. `zaproszenie`, `wsparcie`); `akcja`: identyfikator linku (np. `kontakt`, `kawa`) albo `ukrycie`; `polozenie`: `panel`, `menu` |
 | `Blokada reklam` | Jeden raz na sesję przeglądarki, 1 s po wczytaniu strony. | `blokada`: `tak`, `nie`; `miejsce`: `widoczne`, `ukryte przez blokadę`, `ukryte przez użytkownika`; `tresc`: identyfikator treści |
 
 Konfiguracja w Plausible (ustawienia strony `nadajniki.yasiu.pl`):
 
 1. Otwórz „Goals” i dodaj cel typu „Custom event” dla każdej nazwy z tabeli. Nazwa celu musi być taka sama jak nazwa zdarzenia.
 2. Dodaj cel typu „Pageview” ze ścieżką `/stacja/**`. Ten cel liczy otwarcia kart stacji.
-3. Otwórz „Custom properties” i dodaj właściwości: `rodzaj`, `filtr`, `format`, `zakres`, `akcja`, `sposob`, `zakladka`, `warstwa`, `motyw`, `tresc`, `blokada`, `miejsce`.
+3. Otwórz „Custom properties” i dodaj właściwości: `rodzaj`, `filtr`, `format`, `zakres`, `akcja`, `sposob`, `zakladka`, `warstwa`, `motyw`, `tresc`, `blokada`, `miejsce`, `polozenie`.
 
 Plausible pokazuje zdarzenie w raporcie dopiero po dodaniu celu. Zdarzenia sprzed dodania celu Plausible też zapisuje.
 
@@ -201,6 +201,7 @@ Zasady:
 - Treść to statyczny tekst i linki. Strona nie wczytuje skryptów sieci reklamowych.
 - Nazwy klas i identyfikatorów nie zawierają słów `ad`, `reklama`, `sponsor`, `banner` ani `promo`. Filtry blokad reklam ukrywają elementy z takimi nazwami. Test `test/partner.test.mjs` sprawdza tę zasadę.
 - Przycisk „Ukryj” zapisuje w `localStorage` wartość `SLOT_VERSION`. Gdy zmieniasz treści, zmień `SLOT_VERSION`. Użytkownik, który ukrył stare treści, zobaczy nowe treści jeden raz.
+- Menu boczne (element `#menu-note`) zawsze pokazuje treść `wsparcie`, bez przycisku „Ukryj”.
 - Pasek postępu zbiórki jest widoczny, gdy obiekt `SUPPORT_GOAL` ma obie kwoty (`collected` i `target`, w zł).
 
 Pomiar blokad reklam:

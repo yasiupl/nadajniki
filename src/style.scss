@@ -671,6 +671,15 @@ body[data-panel="collapsed"] {
   }
 }
 
+// W menu bocznym miejsce nie ma marginesów panelu i pokazuje cały tekst także na telefonie.
+.panel-note.menu-note {
+  margin: 8px 0 0;
+
+  .panel-note-text {
+    display: block;
+  }
+}
+
 .panel-note-header {
   display: flex;
   align-items: center;
@@ -780,6 +789,17 @@ body[data-panel="collapsed"] {
   flex: 1;
   overflow-y: auto;
   padding: 8px 16px 24px;
+}
+
+// Menu boczne: blok autora i wsparcia jest przyklejony do dołu.
+// Przy małej wysokości okna blok jest pod resztą treści i menu się przewija.
+.menu-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-bottom {
+  margin-top: auto;
 }
 
 .drawer-footer {

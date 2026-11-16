@@ -743,20 +743,16 @@ body[data-panel="collapsed"] {
   font-size: 12px;
 }
 
+// Przyciski są wyrównane do prawej.
 .panel-note-links {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .panel-note-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
   font-weight: 500;
-
-  .material-icons {
-    font-size: 18px;
-  }
 }
 
 // Mini profil autora w widżecie wsparcia.

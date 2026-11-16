@@ -109,10 +109,11 @@ export function profileHtml(author = AUTHOR) {
 // hideable: false usuwa przycisk "Ukryj" (np. w menu bocznym).
 // profile: true dodaje mini profil autora.
 export function slotHtml(slot, { hideable = true, profile = false } = {}) {
-    const links = slot.links.map(link => {
+    // Pierwszy link to główny przycisk. Następne linki to zwykłe przyciski.
+    const links = slot.links.map((link, index) => {
         const external = link.href.startsWith('http') ? ' target="_blank" rel="noopener"' : ''
         const icon = link.icon ? `<i class="material-icons" aria-hidden="true">${escapeHtml(link.icon)}</i>` : ''
-        return `<a class="panel-note-link" href="${escapeHtml(link.href)}" data-note-link="${escapeHtml(link.id)}"${external}>${icon}${escapeHtml(link.text)}</a>`
+        return `<a class="button${index === 0 ? ' button-primary' : ''} panel-note-link" href="${escapeHtml(link.href)}" data-note-link="${escapeHtml(link.id)}"${external}>${icon}${escapeHtml(link.text)}</a>`
     }).join('')
     const hide = hideable ? '<button type="button" class="icon-button panel-note-hide" data-note-hide aria-label="Ukryj" title="Ukryj"><i class="material-icons" aria-hidden="true">close</i></button>' : ''
     return `<div class="panel-note-header"><span class="panel-note-label">${escapeHtml(slot.label)}</span>${hide}</div>` +

@@ -60,5 +60,6 @@ test('profile appears only on request', () => {
     assert.match(html, /Jestem autorem tej strony\./)
     assert.match(html, /data-note-link="portfolio"/)
     assert.match(html, /local_cafe/)
-    assert.match(html, /SP4EVA/)
+    assert.match(html, /href="https:\/\/www\.qrz\.com\/db\/SP4EVA"/)
+    assert.match(html, /data-note-link="qrz"/)
 })

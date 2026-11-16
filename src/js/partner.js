@@ -10,7 +10,7 @@ export const SUPPORT_GOAL = { year: 2026, collected: 35, target: 500 }
 
 // Mini profil autora w menu bocznym i w oknie wsparcia.
 // Zdjęcie to łącze do pliku na yasiu.pl. Zmiana zdjęcia na yasiu.pl zmienia też zdjęcie tutaj.
-// callsign: znak radioamatorski.
+// callsign: znak radioamatorski. Znak jest linkiem do profilu w bazie QRZ.com.
 export const AUTHOR = {
     name: 'Marcin Jasiukowicz',
     callsign: 'SP4EVA',
@@ -112,7 +112,7 @@ export function profileHtml(author = AUTHOR) {
     return '<div class="note-profile">' +
         `<img class="avatar" alt="" src="${escapeHtml(author.photo)}" width="48" height="48" loading="lazy">` +
         `<div><p class="note-profile-name">${escapeHtml(author.name)}` +
-        (author.callsign ? ` <span class="note-profile-callsign">${escapeHtml(author.callsign)}</span>` : '') + '</p>' +
+        (author.callsign ? ` <a class="note-profile-callsign" href="https://www.qrz.com/db/${encodeURIComponent(author.callsign)}" target="_blank" rel="noopener" data-note-link="qrz" title="Profil ${escapeHtml(author.callsign)} w QRZ.com">${escapeHtml(author.callsign)}</a>` : '') + '</p>' +
         `<p class="note-profile-slogan">${escapeHtml(author.slogan)}</p>` +
         `<p class="note-profile-about">${escapeHtml(author.about)} ` +
         `<a href="${escapeHtml(author.portfolio.href)}" target="_blank" rel="noopener" data-note-link="portfolio">${escapeHtml(author.portfolio.text)}</a></p></div></div>`

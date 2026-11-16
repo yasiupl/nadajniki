@@ -177,7 +177,7 @@ Moduł `src/js/analytics.js` wysyła zdarzenia Plausible, gdy użytkownik używa
 | `Zakładka` | Kliknięcie zakładki panelu. | `zakladka`: `Stacje`, `Pasma`, `Analiza`, `Zmiany` |
 | `Warstwa mapy` | Włączenie warstwy mapy. | `warstwa`: `obszary obsługi`, `gęstość`, `etykiety` |
 | `Motyw` | Zmiana motywu. | `motyw`: `automatyczny`, `jasny`, `ciemny` |
-| `Miejsce w panelu` | Wyświetlenie karty w stopce panelu. Kliknięcie linku albo przycisku „Ukryj”. Otwarcie okna wsparcia. | `tresc`: identyfikator treści (np. `zaproszenie`, `wsparcie`); `akcja`: identyfikator linku (np. `kontakt`, `kawa`, `portfolio`) albo `ukrycie`, `otwarcie` (okno wsparcia), `wyświetlenie` (karta w stopce panelu po wczytaniu strony); `polozenie`: `panel`, `menu`, `pasek` |
+| `Miejsce w panelu` | Wyświetlenie karty w stopce panelu. Kliknięcie linku albo przycisku „Ukryj”. Otwarcie okna wsparcia. | `tresc`: identyfikator treści (np. `zaproszenie`, `wsparcie`); `akcja`: identyfikator linku (np. `kontakt`, `kawa`, `portfolio`, `qrz`) albo `ukrycie`, `otwarcie` (okno wsparcia), `wyświetlenie` (karta w stopce panelu po wczytaniu strony); `polozenie`: `panel`, `menu`, `pasek` |
 | `Blokada reklam` | Jeden raz na sesję przeglądarki, 1 s po wczytaniu strony. | `blokada`: `tak`, `nie`; `miejsce`: `widoczne`, `ukryte przez blokadę`, `ukryte przez użytkownika`; `tresc`: identyfikator treści |
 
 Konfiguracja w Plausible (ustawienia strony `nadajniki.yasiu.pl`):

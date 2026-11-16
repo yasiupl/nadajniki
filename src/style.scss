@@ -789,6 +789,11 @@ body[data-panel="collapsed"] {
   color: var(--accent-ink);
   font: 600 11px/18px var(--mono);
   vertical-align: 1px;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .note-profile-slogan {

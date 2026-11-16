@@ -20,7 +20,8 @@ export const AUTHOR = {
     portfolio: { text: 'Zobacz, czym jeszcze się zajmuję', href: 'https://yasiu.pl' }
 }
 
-// Treści miejsca. Strona wybiera jedną treść na sesję przeglądarki.
+// Treści miejsca. Strona losuje jedną treść przy każdym wczytaniu strony.
+// Przycisk "Ukryj" usuwa widoczną treść z losowania. Gdy użytkownik ukryje wszystkie treści, miejsce znika.
 // id: nazwa treści w zdarzeniach Plausible (właściwość "tresc").
 // links[].id: nazwa linku w zdarzeniach Plausible (właściwość "akcja").
 export const SLOTS = [
@@ -45,11 +46,11 @@ export const SLOTS = [
     }
 ]
 
-// Zmień SLOT_VERSION, gdy zmieniasz treści. Użytkownik, który ukrył stare treści, zobaczy nowe treści jeden raz.
+// Zmień SLOT_VERSION, gdy chcesz pokazać treści użytkownikom, którzy je ukryli (np. nową reklamę).
 export const SLOT_VERSION = '1'
+// localStorage: JSON { version, ids }. ids to identyfikatory ukrytych treści.
 const HIDDEN_KEY = 'panel-note-hidden'
 const MEASURED_KEY = 'panel-note-measured'
-const CHOSEN_KEY = 'panel-note-choice'
 
 // Nazwy klas, które ukrywają ogólne filtry kosmetyczne (np. EasyList).
 const BAIT_CLASSES = 'ad ads adsbox ad-banner ad-placement doubleclick pub_300x250 text-ad textAd sponsor-box'
@@ -62,15 +63,26 @@ function storageSet(storage, key, value) {
     try { storage.setItem(key, value) } catch { /* Zapis jest niedostępny. Wybór działa do zamknięcia strony. */ }
 }
 
-export const isSlotHidden = (storage = globalThis.localStorage) => storageGet(storage, HIDDEN_KEY) === SLOT_VERSION
+// Identyfikatory treści, które użytkownik ukrył. Zapis ze starą wartością SLOT_VERSION nie obowiązuje.
+export function hiddenSlotIds(storage = globalThis.localStorage) {
+    try {
+        const saved = JSON.parse(storageGet(storage, HIDDEN_KEY))
+        return saved?.version === SLOT_VERSION && Array.isArray(saved.ids) ? saved.ids : []
+    } catch {
+        return []
+    }
+}
 
-// Jedna treść na sesję: zapisany wybór albo losowa treść.
-export function chooseSlot(slots = SLOTS, storage = globalThis.sessionStorage, random = Math.random) {
-    const saved = slots.find(slot => slot.id === storageGet(storage, CHOSEN_KEY))
-    if (saved) return saved
-    const slot = slots[Math.floor(random() * slots.length)]
-    storageSet(storage, CHOSEN_KEY, slot.id)
-    return slot
+export function hideSlotId(id, storage = globalThis.localStorage) {
+    const ids = [...new Set([...hiddenSlotIds(storage), id])]
+    storageSet(storage, HIDDEN_KEY, JSON.stringify({ version: SLOT_VERSION, ids }))
+}
+
+// Losowa treść spośród treści, których użytkownik nie ukrył, albo null.
+export function chooseSlot(slots = SLOTS, hiddenIds = hiddenSlotIds(), random = Math.random) {
+    const available = slots.filter(slot => !hiddenIds.includes(slot.id))
+    if (!available.length) return null
+    return available[Math.floor(random() * available.length)]
 }
 
 // Wynik pomiaru dla Plausible.
@@ -152,21 +164,22 @@ async function measure(element, slot) {
     if (storageGet(globalThis.sessionStorage, MEASURED_KEY)) return
     storageSet(globalThis.sessionStorage, MEASURED_KEY, '1')
     const baitHidden = await checkBait()
-    const slotHiddenByUser = isSlotHidden()
+    const slotHiddenByUser = !slot
     const result = measurement({ baitHidden, slotRendered: isRendered(element), slotHiddenByUser })
-    track(GOALS.blocking, { ...result, tresc: slotHiddenByUser ? '' : slot.id })
+    track(GOALS.blocking, { ...result, tresc: slot?.id })
 }
 
 export function initPartnerSlot() {
     const element = document.getElementById('panel-note')
     if (!element) return
     const slot = chooseSlot()
-    element.innerHTML = slotHtml(slot)
-    element.hidden = isSlotHidden()
+    element.innerHTML = slot ? slotHtml(slot) : ''
+    element.hidden = !slot
     element.addEventListener('click', event => {
         if (event.target.closest('[data-note-hide]')) {
             event.preventDefault()
-            storageSet(globalThis.localStorage, HIDDEN_KEY, SLOT_VERSION)
+            hideSlotId(slot.id)
+            // Następna treść z losowania pojawi się po odświeżeniu strony.
             element.hidden = true
             track(GOALS.slot, { tresc: slot.id, akcja: 'ukrycie', polozenie: 'panel' })
             return
@@ -174,6 +187,8 @@ export function initPartnerSlot() {
         const link = event.target.closest('[data-note-link]')
         if (link) track(GOALS.slot, { tresc: slot.id, akcja: link.dataset.noteLink, polozenie: 'panel' })
     })
+    // Wyświetlenie karty: podstawa do wskaźników zamknięć i kliknięć dla każdej treści.
+    if (slot) track(GOALS.slot, { tresc: slot.id, akcja: 'wyświetlenie', polozenie: 'panel' })
     measure(element, slot)
     initMenuNote()
 }

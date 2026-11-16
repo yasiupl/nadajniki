@@ -1,17 +1,17 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { SLOTS, chooseSlot, measurement, slotHtml, goalHtml, isSlotHidden, SLOT_VERSION } from '../src/js/partner.js'
+import { SLOTS, chooseSlot, measurement, slotHtml, goalHtml, hiddenSlotIds, hideSlotId, SLOT_VERSION } from '../src/js/partner.js'
 
 const memory = (initial = {}) => {
     const data = { ...initial }
     return { getItem: key => data[key] ?? null, setItem: (key, value) => { data[key] = String(value) } }
 }
 
-test('chooseSlot keeps one content for the session', () => {
-    const storage = memory()
-    const first = chooseSlot(SLOTS, storage, () => 0.99)
-    assert.equal(first.id, SLOTS.at(-1).id)
-    assert.equal(chooseSlot(SLOTS, storage, () => 0).id, first.id)
+test('chooseSlot draws only from contents the user did not hide', () => {
+    assert.equal(chooseSlot(SLOTS, [], () => 0).id, SLOTS[0].id)
+    assert.equal(chooseSlot(SLOTS, [], () => 0.99).id, SLOTS.at(-1).id)
+    assert.equal(chooseSlot(SLOTS, ['wsparcie'], () => 0.99).id, 'zaproszenie')
+    assert.equal(chooseSlot(SLOTS, SLOTS.map(slot => slot.id)), null)
 })
 
 test('measurement separates blocking from hiding by the user', () => {
@@ -35,9 +35,16 @@ test('goal bar appears only with both amounts', () => {
     assert.match(goalHtml({ year: 2026, collected: 900, target: 500 }), /width:100\.0%/)
 })
 
-test('hiding is stored per content version', () => {
-    assert.equal(isSlotHidden(memory({ 'panel-note-hidden': SLOT_VERSION })), true)
-    assert.equal(isSlotHidden(memory({ 'panel-note-hidden': 'old' })), false)
+test('hiding is stored per content and version', () => {
+    const storage = memory()
+    hideSlotId('wsparcie', storage)
+    hideSlotId('wsparcie', storage)
+    assert.deepEqual(hiddenSlotIds(storage), ['wsparcie'])
+    hideSlotId('zaproszenie', storage)
+    assert.deepEqual(hiddenSlotIds(storage), ['wsparcie', 'zaproszenie'])
+    assert.deepEqual(hiddenSlotIds(memory({ 'panel-note-hidden': JSON.stringify({ version: 'old', ids: ['wsparcie'] }) })), [])
+    assert.deepEqual(hiddenSlotIds(memory({ 'panel-note-hidden': 'not json' })), [])
+    assert.equal(SLOT_VERSION.length > 0, true)
 })
 
 test('slot without hide button for the menu', () => {

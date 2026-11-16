@@ -5,6 +5,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/m/js/script.js", "destination": "https://plausible.yasiu.pl/js/script.js" },
+    { "source": "/m/api/event", "destination": "https://plausible.yasiu.pl/api/event" },
     { "source": "/stacja/:path*", "destination": "/index.html" }
   ],
   "crons": [

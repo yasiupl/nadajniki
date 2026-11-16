@@ -17,6 +17,7 @@ import { showStationUrl, clearStationUrl, syncFiltersUrl, currentStationId, onRo
 import { openExportDialog } from './js/export-dialog.js'
 import { favoriteIds, toggleFavorite, onFavoritesChange } from './js/favorites.js'
 import { GOALS, track } from './js/analytics.js'
+import { initPartnerSlot } from './js/partner.js'
 import { $, toast, copyText, isMobile } from './js/ui.js'
 import { themePreference, effectiveTheme, saveThemePreference, onSystemThemeChange } from './js/theme.js'
 
@@ -562,6 +563,7 @@ async function start() {
     state.filters = filtersFromParams(new URLSearchParams(window.location.search))
 
     initPanel()
+    initPartnerSlot()
     bindEvents()
     syncThemeControls()
     onSystemThemeChange(applyTheme)

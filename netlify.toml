@@ -6,6 +6,19 @@
   NODE_VERSION = "22"
   NODE_OPTIONS = "--max_old_space_size=4096"
 
+# Plausible przez ścieżkę tej strony. Blokady reklam rzadziej blokują adres własnej domeny.
+[[redirects]]
+  from = "/m/js/script.js"
+  to = "https://plausible.yasiu.pl/js/script.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/m/api/event"
+  to = "https://plausible.yasiu.pl/api/event"
+  status = 200
+  force = true
+
 # Karta stacji (/stacja/<id>) to ta sama aplikacja.
 [[redirects]]
   from = "/stacja/*"

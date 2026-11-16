@@ -10,7 +10,9 @@ export const GOALS = {
     copyFrequencies: 'Kopiowanie częstotliwości',
     tab: 'Zakładka',
     layer: 'Warstwa mapy',
-    theme: 'Motyw'
+    theme: 'Motyw',
+    slot: 'Miejsce w panelu',
+    blocking: 'Blokada reklam'
 }
 
 // Puste właściwości nie trafiają do Plausible. Wartości są tekstami.

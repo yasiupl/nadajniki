@@ -72,6 +72,7 @@ Punkt wejścia to plik `src/app.js`. Ten plik łączy moduły: uruchamia mapę, 
 | `src/js/export-dialog.js` | Okno eksportu: wybór stacji i formatu. |
 | `src/js/favorites.js` | Ulubione stacje zapisane w `localStorage`. |
 | `src/js/theme.js` | Motyw: automatyczny, jasny albo ciemny. |
+| `src/js/partner.js` | Miejsce na reklamę w panelu i pomiar blokad reklam. |
 | `src/js/ui.js` | Komunikaty, schowek, pobieranie plików. |
 
 Moduły `config.js`, `format.js`, `query.js` i `filters.js` nie używają DOM (Document Object Model). Testy jednostkowe sprawdzają te moduły w Node.js.
@@ -176,14 +177,39 @@ Moduł `src/js/analytics.js` wysyła zdarzenia Plausible, gdy użytkownik używa
 | `Zakładka` | Kliknięcie zakładki panelu. | `zakladka`: `Stacje`, `Pasma`, `Analiza`, `Zmiany` |
 | `Warstwa mapy` | Włączenie warstwy mapy. | `warstwa`: `obszary obsługi`, `gęstość`, `etykiety` |
 | `Motyw` | Zmiana motywu. | `motyw`: `automatyczny`, `jasny`, `ciemny` |
+| `Miejsce w panelu` | Kliknięcie linku albo przycisku „Ukryj” w miejscu na reklamę. | `tresc`: identyfikator treści (np. `zaproszenie`, `wsparcie`); `akcja`: identyfikator linku (np. `kontakt`, `patreon`, `paypal`) albo `ukrycie` |
+| `Blokada reklam` | Jeden raz na sesję przeglądarki, 1 s po wczytaniu strony. | `blokada`: `tak`, `nie`; `miejsce`: `widoczne`, `ukryte przez blokadę`, `ukryte przez użytkownika`; `tresc`: identyfikator treści |
 
 Konfiguracja w Plausible (ustawienia strony `nadajniki.yasiu.pl`):
 
 1. Otwórz „Goals” i dodaj cel typu „Custom event” dla każdej nazwy z tabeli. Nazwa celu musi być taka sama jak nazwa zdarzenia.
 2. Dodaj cel typu „Pageview” ze ścieżką `/stacja/**`. Ten cel liczy otwarcia kart stacji.
-3. Otwórz „Custom properties” i dodaj właściwości: `rodzaj`, `filtr`, `format`, `zakres`, `akcja`, `sposob`, `zakladka`, `warstwa`, `motyw`.
+3. Otwórz „Custom properties” i dodaj właściwości: `rodzaj`, `filtr`, `format`, `zakres`, `akcja`, `sposob`, `zakladka`, `warstwa`, `motyw`, `tresc`, `blokada`, `miejsce`.
 
 Plausible pokazuje zdarzenie w raporcie dopiero po dodaniu celu. Zdarzenia sprzed dodania celu Plausible też zapisuje.
+
+### Adres skryptu Plausible
+
+Strona wczytuje skrypt Plausible z adresu `/m/js/script.js` i wysyła zdarzenia na adres `/m/api/event`. Przekierowania w plikach `netlify.toml` i `vercel.json` przesyłają te żądania do instancji Plausible. Blokady reklam rzadziej blokują adresy w domenie strony. Bez przekierowań Plausible nie liczy użytkowników z blokadą, i pomiar blokad reklam jest za niski.
+
+### Miejsce na reklamę i pomiar blokad reklam
+
+Moduł `src/js/partner.js` pokazuje stałą stopkę panelu (element `#panel-note`). Stopka ma jedną treść z listy `SLOTS`. Strona wybiera treść losowo, jeden raz na sesję przeglądarki.
+
+Zasady:
+
+- Treść to statyczny tekst i linki. Strona nie wczytuje skryptów sieci reklamowych.
+- Nazwy klas i identyfikatorów nie zawierają słów `ad`, `reklama`, `sponsor`, `banner` ani `promo`. Filtry blokad reklam ukrywają elementy z takimi nazwami. Test `test/partner.test.mjs` sprawdza tę zasadę.
+- Przycisk „Ukryj” zapisuje w `localStorage` wartość `SLOT_VERSION`. Gdy zmieniasz treści, zmień `SLOT_VERSION`. Użytkownik, który ukrył stare treści, zobaczy nowe treści jeden raz.
+- Pasek postępu zbiórki jest widoczny, gdy obiekt `SUPPORT_GOAL` ma obie kwoty (`collected` i `target`, w zł).
+
+Pomiar blokad reklam:
+
+1. Strona dodaje niewidoczny element-przynętę z klasami, które ukrywają ogólne filtry (np. `adsbox`).
+2. Po 1 s strona sprawdza, czy filtr ukrył przynętę. Strona sprawdza też, czy stopka panelu jest widoczna.
+3. Strona wysyła zdarzenie `Blokada reklam`.
+
+Udział użytkowników z blokadą to liczba unikalnych użytkowników zdarzenia `Blokada reklam` z właściwością `blokada` = `tak`, podzielona przez liczbę wszystkich unikalnych użytkowników tego zdarzenia. Pomiar nie liczy użytkowników, którzy blokują skrypt Plausible albo wyłączają JavaScript.
 ## Mapa
 
 Mapa używa Mapbox GL, stylów `light-v11` i `dark-v11` oraz odwzorowania Merkatora.

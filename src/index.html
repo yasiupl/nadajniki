@@ -16,23 +16,12 @@
   <meta property="og:image" content="/icons/icon_512x512.png">
   <meta property="og:url" content="https://nadajniki.yasiu.pl">
   <meta name="twitter:card" content="summary_large_image">
-  <!-- Google Tag Manager -->
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','dataLayer','GTM-N79X7MS');</script>
-  <!-- End Google Tag Manager -->
-  <script defer data-domain="nadajniki.yasiu.pl" src="https://plausible.yasiu.pl/js/script.js"></script>
+  <!-- Plausible przez ścieżkę tej strony (przekierowanie w netlify.toml i vercel.json). Blokady reklam rzadziej blokują taki adres. -->
+  <script defer data-domain="nadajniki.yasiu.pl" data-api="/m/api/event" src="/m/js/script.js"></script>
   <script>window.plausible = window.plausible || function () { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
 </head>
 
 <body>
-  <!-- Google Tag Manager (noscript) -->
-  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N79X7MS"
-  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
-
   <header class="topbar">
     <button type="button" class="icon-button" data-action="open-menu" aria-label="Menu"><i class="material-icons" aria-hidden="true">menu</i></button>
     <a class="brand" href="/">Mapa nadajników</a>
@@ -80,6 +69,8 @@
       <div id="panel-body" class="panel-body" role="tabpanel">
         <p class="muted loading">Wczytywanie danych…</p>
       </div>
+      <!-- Miejsce na reklamę lub wsparcie (src/js/partner.js). -->
+      <section id="panel-note" class="panel-note" aria-label="Informacja od autora" hidden></section>
     </aside>
     <button type="button" class="panel-expand" data-action="toggle-panel" aria-label="Rozwiń panel">
       <i class="material-icons" aria-hidden="true">chevron_right</i><span>Stacje</span></button>

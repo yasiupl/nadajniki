@@ -655,6 +655,85 @@ body[data-panel="collapsed"] {
   padding: 8px 16px 24px;
 }
 
+// Miejsce na reklamę lub wsparcie (src/js/partner.js). Stała stopka panelu.
+// Nazwy klas nie zawierają słów, które ukrywają filtry blokad reklam.
+.panel-note {
+  flex: none;
+  margin: 0 12px 12px;
+  padding: 8px 12px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: var(--page);
+  font-size: 13px;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.panel-note-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.panel-note-label {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.panel-note-hide {
+  width: 24px;
+  height: 24px;
+  margin-right: -6px;
+
+  .material-icons {
+    font-size: 16px;
+  }
+}
+
+.panel-note-title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.panel-note-text {
+  margin: 2px 0 6px;
+  color: var(--ink-2);
+}
+
+.panel-note-goal {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--hairline);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--accent);
+  }
+}
+
+.panel-note-goal-text {
+  margin: 4px 0 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.panel-note-links {
+  display: flex;
+  gap: 12px;
+}
+
+.panel-note-link {
+  font-weight: 500;
+}
+
 // --- Szuflady, zasłona, okno dialogowe, komunikat ---
 
 .drawer {
@@ -1979,6 +2058,15 @@ button.bar-row {
 
     &[data-sheet="peek"] {
       height: 104px;
+
+      // Przy małym panelu miejsce zajmuje zero wysokości. Nie używaj "display: none": pomiar blokady sprawdza tę właściwość.
+      .panel-note {
+        max-height: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        overflow: hidden;
+      }
     }
 
     &[data-sheet="half"] {
@@ -2015,6 +2103,11 @@ button.bar-row {
 
   .panel-tabs [role="tab"] {
     padding: 8px 4px;
+  }
+
+  // Na telefonie miejsce w panelu pokazuje tylko tytuł, pasek postępu i linki.
+  .panel-note-text {
+    display: none;
   }
 
   .drawer {

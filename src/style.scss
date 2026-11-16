@@ -426,8 +426,17 @@ select {
   }
 }
 
-.theme-toggle {
+// Przycisk wsparcia stoi pierwszy po prawej stronie paska.
+.support-button {
   margin-left: auto;
+}
+
+.support-dialog {
+  width: min(420px, calc(100vw - 32px));
+
+  .panel-note {
+    margin: 0;
+  }
 }
 
 .filters-button {
@@ -2027,8 +2036,13 @@ button.bar-row {
     display: none;
   }
 
-  .filters-button .label {
+  .filters-button .label,
+  .support-button .label {
     display: none;
+  }
+
+  .support-button {
+    padding: 6px 8px;
   }
 
   .filters-button {

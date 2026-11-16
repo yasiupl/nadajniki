@@ -152,15 +152,28 @@ export function initPartnerSlot() {
     initMenuNote()
 }
 
-// Menu boczne: zawsze treść "wsparcie", bez przycisku "Ukryj".
-function initMenuNote() {
-    const element = document.getElementById('menu-note')
+// Treść "wsparcie" bez przycisku "Ukryj": menu boczne i okno z paska górnego.
+// polozenie: nazwa miejsca w zdarzeniach Plausible.
+function initStaticNote(element, polozenie) {
     const slot = SLOTS.find(item => item.id === 'wsparcie')
     if (!element || !slot) return
     element.innerHTML = slotHtml(slot, { hideable: false })
     element.hidden = false
     element.addEventListener('click', event => {
         const link = event.target.closest('[data-note-link]')
-        if (link) track(GOALS.slot, { tresc: slot.id, akcja: link.dataset.noteLink, polozenie: 'menu' })
+        if (link) track(GOALS.slot, { tresc: slot.id, akcja: link.dataset.noteLink, polozenie })
     })
+}
+
+function initMenuNote() {
+    initStaticNote(document.getElementById('menu-note'), 'menu')
+    initStaticNote(document.getElementById('dialog-note'), 'pasek')
+}
+
+// Przycisk "Wesprzyj" na pasku górnym otwiera okno z treścią "wsparcie".
+export function openSupportDialog() {
+    const dialog = document.getElementById('support-dialog')
+    if (!dialog?.showModal) return
+    track(GOALS.slot, { tresc: 'wsparcie', akcja: 'otwarcie', polozenie: 'pasek' })
+    dialog.showModal()
 }

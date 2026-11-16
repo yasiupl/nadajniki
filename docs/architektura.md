@@ -177,7 +177,7 @@ Moduł `src/js/analytics.js` wysyła zdarzenia Plausible, gdy użytkownik używa
 | `Zakładka` | Kliknięcie zakładki panelu. | `zakladka`: `Stacje`, `Pasma`, `Analiza`, `Zmiany` |
 | `Warstwa mapy` | Włączenie warstwy mapy. | `warstwa`: `obszary obsługi`, `gęstość`, `etykiety` |
 | `Motyw` | Zmiana motywu. | `motyw`: `automatyczny`, `jasny`, `ciemny` |
-| `Miejsce w panelu` | Kliknięcie linku albo przycisku „Ukryj” w miejscu na reklamę. | `tresc`: identyfikator treści (np. `zaproszenie`, `wsparcie`); `akcja`: identyfikator linku (np. `kontakt`, `kawa`) albo `ukrycie`; `polozenie`: `panel`, `menu` |
+| `Miejsce w panelu` | Kliknięcie linku albo przycisku „Ukryj” w miejscu na reklamę. Otwarcie okna wsparcia. | `tresc`: identyfikator treści (np. `zaproszenie`, `wsparcie`); `akcja`: identyfikator linku (np. `kontakt`, `kawa`) albo `ukrycie`, albo `otwarcie` (okno wsparcia); `polozenie`: `panel`, `menu`, `pasek` |
 | `Blokada reklam` | Jeden raz na sesję przeglądarki, 1 s po wczytaniu strony. | `blokada`: `tak`, `nie`; `miejsce`: `widoczne`, `ukryte przez blokadę`, `ukryte przez użytkownika`; `tresc`: identyfikator treści |
 
 Konfiguracja w Plausible (ustawienia strony `nadajniki.yasiu.pl`):
@@ -202,6 +202,7 @@ Zasady:
 - Nazwy klas i identyfikatorów nie zawierają słów `ad`, `reklama`, `sponsor`, `banner` ani `promo`. Filtry blokad reklam ukrywają elementy z takimi nazwami. Test `test/partner.test.mjs` sprawdza tę zasadę.
 - Przycisk „Ukryj” zapisuje w `localStorage` wartość `SLOT_VERSION`. Gdy zmieniasz treści, zmień `SLOT_VERSION`. Użytkownik, który ukrył stare treści, zobaczy nowe treści jeden raz.
 - Menu boczne (element `#menu-note`) zawsze pokazuje treść `wsparcie`, bez przycisku „Ukryj”.
+- Przycisk „Wesprzyj” na pasku górnym otwiera okno `#support-dialog` z treścią `wsparcie`, bez przycisku „Ukryj”.
 - Pasek postępu zbiórki jest widoczny, gdy obiekt `SUPPORT_GOAL` ma obie kwoty (`collected` i `target`, w zł).
 
 Pomiar blokad reklam:

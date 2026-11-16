@@ -32,6 +32,8 @@
       <button id="search-clear" type="button" class="icon-button" aria-label="Wyczyść wyszukiwanie" hidden><i class="material-icons" aria-hidden="true">close</i></button>
       <div id="search-results" class="search-results" role="listbox" aria-label="Podpowiedzi" hidden></div>
     </div>
+    <button id="support-button" type="button" class="button support-button" data-action="open-support" aria-label="Wesprzyj stronę" title="Wesprzyj stronę">
+      <i class="material-icons" aria-hidden="true">local_cafe</i><span class="label">Wesprzyj</span></button>
     <button id="theme-toggle" type="button" class="icon-button theme-toggle" data-action="toggle-theme" aria-label="Włącz tryb ciemny" title="Włącz tryb ciemny">
       <i class="material-icons" aria-hidden="true">dark_mode</i></button>
     <button type="button" class="button filters-button" data-action="open-filters" aria-label="Filtry">
@@ -138,6 +140,13 @@
       <p><strong>Nie nadawaj na żadnej z tych częstotliwości bez wymaganego pozwolenia radiowego.</strong></p>
       <p>Dane pochodzą z publicznych zasobów Urzędu Komunikacji Elektronicznej (UKE).</p>
       <div class="dialog-actions"><button class="button button-primary" value="ok">Rozumiem</button></div>
+    </form>
+  </dialog>
+  <!-- Okno wsparcia (src/js/partner.js). -->
+  <dialog id="support-dialog" class="dialog support-dialog" aria-label="Wsparcie strony">
+    <form method="dialog">
+      <section id="dialog-note" class="panel-note menu-note"></section>
+      <div class="dialog-actions"><button class="button" value="close">Zamknij</button></div>
     </form>
   </dialog>
   <dialog id="export-dialog" class="dialog export-dialog" aria-labelledby="export-title"></dialog>

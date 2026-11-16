@@ -6,7 +6,7 @@ import { GOALS, track } from './analytics.js'
 
 // Roczny cel zbiórki na koszty strony. Pasek postępu jest widoczny, gdy obie kwoty mają wartość (w zł).
 // Zmień "collected" po każdej wpłacie.
-export const SUPPORT_GOAL = { year: 2026, collected: null, target: null }
+export const SUPPORT_GOAL = { year: 2026, collected: 35, target: 500 }
 
 // Treści miejsca. Strona wybiera jedną treść na sesję przeglądarki.
 // id: nazwa treści w zdarzeniach Plausible (właściwość "tresc").
@@ -28,8 +28,7 @@ export const SLOTS = [
         goal: SUPPORT_GOAL,
         text: 'Mapa jest bezpłatna i bez reklam sieciowych. Wpłaty pokrywają koszty serwera i map oraz rozwój nowych funkcji.',
         links: [
-            { id: 'patreon', text: 'Patreon', href: 'https://patreon.com/yasiupl' },
-            { id: 'paypal', text: 'PayPal', href: 'https://paypal.me/yasiupl' }
+            { id: 'kawa', text: 'Postaw kawę', href: 'https://buycoffee.to/yasiu' }
         ]
     }
 ]

@@ -177,7 +177,7 @@ Moduł `src/js/analytics.js` wysyła zdarzenia Plausible, gdy użytkownik używa
 | `Zakładka` | Kliknięcie zakładki panelu. | `zakladka`: `Stacje`, `Pasma`, `Analiza`, `Zmiany` |
 | `Warstwa mapy` | Włączenie warstwy mapy. | `warstwa`: `obszary obsługi`, `gęstość`, `etykiety` |
 | `Motyw` | Zmiana motywu. | `motyw`: `automatyczny`, `jasny`, `ciemny` |
-| `Miejsce w panelu` | Kliknięcie linku albo przycisku „Ukryj” w miejscu na reklamę. | `tresc`: identyfikator treści (np. `zaproszenie`, `wsparcie`); `akcja`: identyfikator linku (np. `kontakt`, `patreon`, `paypal`) albo `ukrycie` |
+| `Miejsce w panelu` | Kliknięcie linku albo przycisku „Ukryj” w miejscu na reklamę. | `tresc`: identyfikator treści (np. `zaproszenie`, `wsparcie`); `akcja`: identyfikator linku (np. `kontakt`, `kawa`) albo `ukrycie` |
 | `Blokada reklam` | Jeden raz na sesję przeglądarki, 1 s po wczytaniu strony. | `blokada`: `tak`, `nie`; `miejsce`: `widoczne`, `ukryte przez blokadę`, `ukryte przez użytkownika`; `tresc`: identyfikator treści |
 
 Konfiguracja w Plausible (ustawienia strony `nadajniki.yasiu.pl`):

@@ -4,9 +4,23 @@
 // Filtry blokad reklam ukrywają elementy z takimi nazwami.
 import { GOALS, track } from './analytics.js'
 
-// Roczny cel zbiórki na koszty strony. Pasek postępu jest widoczny, gdy obie kwoty mają wartość (w zł).
-// Zmień "collected" po każdej wpłacie.
-export const SUPPORT_GOAL = { year: 2026, collected: 35, target: 500 }
+// Roczny cel zbiórki na koszty strony (w zł).
+// year: bieżący rok. target: stały cel roczny.
+// collected: zmienna środowiskowa SUPPORT_COLLECTED w czasie budowania (np. w ustawieniach Netlify).
+// Po każdej wpłacie zmień SUPPORT_COLLECTED i zbuduj stronę ponownie. Na początku roku ustaw SUPPORT_COLLECTED na 0.
+// Gdy SUPPORT_COLLECTED nie ma wartości liczbowej, pasek postępu nie jest widoczny.
+export const SUPPORT_TARGET = 500
+
+export function parseCollected(value) {
+    if (value === undefined || value === null || String(value).trim() === '') return null
+    const amount = Number(String(value).replace(',', '.'))
+    return Number.isFinite(amount) && amount >= 0 ? amount : null
+}
+
+/* global __SUPPORT_COLLECTED__ */
+const BUILD_COLLECTED = typeof __SUPPORT_COLLECTED__ === 'undefined' ? '' : __SUPPORT_COLLECTED__
+
+export const SUPPORT_GOAL = { year: new Date().getFullYear(), collected: parseCollected(BUILD_COLLECTED), target: SUPPORT_TARGET }
 
 // Mini profil autora w menu bocznym i w oknie wsparcia.
 // Zdjęcie to łącze do pliku na yasiu.pl. Zmiana zdjęcia na yasiu.pl zmienia też zdjęcie tutaj.

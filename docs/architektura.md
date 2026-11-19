@@ -205,7 +205,10 @@ Zasady:
 - Menu boczne (element `#menu-note`) zawsze pokazuje treść `wsparcie`, bez przycisku „Ukryj”.
 - Przycisk „Wesprzyj” na pasku górnym otwiera okno `#support-dialog` z treścią `wsparcie`, bez przycisku „Ukryj”.
 - W menu bocznym i w oknie wsparcia treść ma mini profil autora (obiekt `AUTHOR`).
-- Pasek postępu zbiórki jest widoczny, gdy obiekt `SUPPORT_GOAL` ma obie kwoty (`collected` i `target`, w zł).
+- Pasek postępu zbiórki pokazuje roczny cel `SUPPORT_TARGET` (w zł) i kwotę zebraną w bieżącym roku.
+- Kwota zebrana pochodzi ze zmiennej środowiskowej `SUPPORT_COLLECTED` (w zł) w czasie budowania. Ustaw tę zmienną w ustawieniach serwisu, który buduje stronę (np. Netlify: „Site configuration” → „Environment variables”). Po każdej zmianie zbuduj stronę ponownie.
+- Na początku roku ustaw `SUPPORT_COLLECTED` na `0`. Rok na pasku postępu strona ustawia automatycznie.
+- Gdy `SUPPORT_COLLECTED` nie ma wartości liczbowej, pasek postępu nie jest widoczny.
 
 Wskaźniki kart w Plausible (cel `Miejsce w panelu`, filtr `polozenie` = `panel`, podział według `tresc` i `akcja`):
 

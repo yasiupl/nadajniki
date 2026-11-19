@@ -4,6 +4,7 @@ import HtmlWebpackPlugin from 'html-webpack-plugin'
 import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import WebpackPwaManifest from 'webpack-pwa-manifest'
 import WorkboxPlugin from 'workbox-webpack-plugin'
+import webpack from 'webpack'
 
 const root = path.dirname(fileURLToPath(import.meta.url))
 const TITLE = 'Mapa nadajników radiowych'
@@ -29,6 +30,8 @@ export default (env, argv) => {
         },
         performance: { hints: false },
         plugins: [
+            // Kwota zebrana w bieżącym roku (zł). Wartość pochodzi ze zmiennej środowiskowej SUPPORT_COLLECTED w czasie budowania.
+            new webpack.DefinePlugin({ __SUPPORT_COLLECTED__: JSON.stringify(process.env.SUPPORT_COLLECTED ?? '') }),
             new MiniCssExtractPlugin({ filename: production ? '[name].[contenthash:8].css' : '[name].css' }),
             new HtmlWebpackPlugin({
                 title: TITLE,

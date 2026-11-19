@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { SLOTS, chooseSlot, measurement, slotHtml, goalHtml, hiddenSlotIds, hideSlotId, SLOT_VERSION } from '../src/js/partner.js'
+import { parseCollected, SLOTS, chooseSlot, measurement, slotHtml, goalHtml, hiddenSlotIds, hideSlotId, SLOT_VERSION } from '../src/js/partner.js'
 
 const memory = (initial = {}) => {
     const data = { ...initial }
@@ -62,4 +62,13 @@ test('profile appears only on request', () => {
     assert.match(html, /local_cafe/)
     assert.match(html, /href="https:\/\/www\.qrz\.com\/db\/SP4EVA"/)
     assert.match(html, /data-note-link="qrz"/)
+})
+
+test('parseCollected reads the build variable', () => {
+    assert.equal(parseCollected('85'), 85)
+    assert.equal(parseCollected(' 12,50 '), 12.5)
+    assert.equal(parseCollected(''), null)
+    assert.equal(parseCollected(undefined), null)
+    assert.equal(parseCollected('abc'), null)
+    assert.equal(parseCollected('-5'), null)
 })
